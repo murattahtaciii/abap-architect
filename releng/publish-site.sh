@@ -48,6 +48,40 @@ echo "==> Site kopyalaniyor..."
 find "$WORK" -mindepth 1 -maxdepth 1 ! -name '.git' -exec rm -rf {} +
 cp -R "$SITE"/. "$WORK"/
 
+# Site kokune basit bir tanitim sayfasi (p2 deposu yaninda)
+cat > "$WORK/index.html" <<'HTML'
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<title>ABAP Architect — Eclipse Plug-in</title>
+<style>
+  body { font-family: -apple-system, Segoe UI, Roboto, sans-serif; max-width: 720px;
+         margin: 48px auto; padding: 0 20px; line-height: 1.6; color: #222; }
+  code { background: #f4f4f4; padding: 2px 6px; border-radius: 4px; }
+  h1 { margin-bottom: 4px; }
+  .sub { color: #666; margin-top: 0; }
+  a { color: #0a66c2; }
+</style>
+</head>
+<body>
+<h1>ABAP Architect</h1>
+<p class="sub">JSON/XML verisinden ABAP tip tanimlari uretir ve ADT uzerinden gercek DDIC
+nesneleri olusturur. / Generates ABAP types from JSON/XML and creates real DDIC objects via ADT.</p>
+
+<h2>Kurulum / Installation</h2>
+<ol>
+  <li>Eclipse: <code>Help &gt; Install New Software...</code></li>
+  <li><code>Add...</code> &gt; Location: <code>https://murattahtaciii.github.io/abap-architect/</code></li>
+  <li>"ABAP Architect" secip kurun, Eclipse'i yeniden baslatin.</li>
+</ol>
+
+<p><a href="https://github.com/murattahtaciii/abap-architect">GitHub</a> &nbsp;|&nbsp;
+<a href="https://www.linkedin.com/in/murattahtacii/">LinkedIn</a></p>
+</body>
+</html>
+HTML
+
 git -C "$WORK" add -A
 if git -C "$WORK" diff --cached --quiet; then
   echo "Degisiklik yok, push atlandi."
