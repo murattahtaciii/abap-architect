@@ -37,6 +37,16 @@ Eclipse eklentisi.
   ADT ABAP editor is supported (via the `IAbapSourcePage` adapter).
 - TR/EN interface, dark/light theme aware coloring, line numbers.
 
+### Screenshots
+
+Main view (JSON input -> generated ABAP types):
+
+![Main view](docs/images/main-view.png)
+
+Create DDIC Objects dialog:
+
+![Create DDIC Objects](docs/images/create-ddic-dialog.png)
+
 ### Requirements
 
 - Eclipse IDE 2026-03 (4.39) or similar; Java 21+.
@@ -157,6 +167,16 @@ Eclipse Public License 2.0 (EPL-2.0). See [LICENSE](LICENSE).
 - **Editöre Ekle**: Üretilen kodu aktif editörde imlecin bulunduğu konuma ekler. ABAP
   Development Tools (ADT) ABAP editörü desteklenir (`IAbapSourcePage` adaptörü üzerinden).
 - TR/EN arayüz, koyu/açık tema uyumlu renklendirme, satır numaraları.
+
+### Ekran Görüntüleri
+
+Ana görünüm (JSON girişi -> üretilen ABAP tipleri):
+
+![Ana görünüm](docs/images/main-view.png)
+
+DDIC Nesneleri Oluştur diyaloğu:
+
+![DDIC Oluştur](docs/images/create-ddic-dialog.png)
 
 ### Gereksinimler
 
