@@ -1,0 +1,2455 @@
+<!DOCTYPE html>
+<html lang="tr" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ABAP JSON Architect</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.44.0/min/vs/loader.min.js"></script>
+<style>
+/* ═══════════════════════════════════════════════
+   DESIGN TOKENS
+═══════════════════════════════════════════════ */
+:root {
+  --bg:        #f1f5f9;
+  --surf:      #ffffff;
+  --surf2:     #f8fafc;
+  --surf3:     #f1f5f9;
+  --bdr:       #e2e8f0;
+  --bdr2:      #cbd5e1;
+  --tx:        #0f172a;
+  --tx1:       #1e293b;
+  --tx2:       #475569;
+  --tx3:       #94a3b8;
+  --ac:        #3b82f6;
+  --ac-h:      #2563eb;
+  --ac-dim:    rgba(59,130,246,.12);
+  --ac-glow:   rgba(59,130,246,.22);
+  --ok:        #16a34a;
+  --ok-dim:    rgba(22,163,74,.12);
+  --err:       #dc2626;
+  --err-dim:   rgba(220,38,38,.12);
+  --warn:      #d97706;
+  /* header always dark */
+  --hbg:       #07101f;
+  --hbr:       rgba(255,255,255,.05);
+  /* SYNTAX LIGHT — high contrast */
+  --jk: #1e40af; --js: #166534; --jn: #9a3412;
+  --jb: #6b21a8; --ju: #881337; --jB: #92400e; --jc: #64748b;
+  --ak: #5b21b6; --as: #166534; --an: #9a3412;
+  --ac2:#1e40af; --acom:#6b7280;
+  /* badges light */
+  --bsg:#dcfce7; --bst:#166534;
+  --bng:#fff7ed; --bnt:#9a3412;
+  --bbg:#f3e8ff; --bbt:#6b21a8;
+  --bog:#dbeafe; --bot:#1e40af;
+  --bag:#e0e7ff; --bat:#3730a3;
+  --bug:#f1f5f9; --but:#475569;
+  --r:8px; --rs:5px; --rl:12px;
+  --sh1:0 1px 3px rgba(0,0,0,.08),0 1px 2px rgba(0,0,0,.06);
+  --sh2:0 4px 8px rgba(0,0,0,.08),0 2px 4px rgba(0,0,0,.05);
+  --sh3:0 10px 20px rgba(0,0,0,.1),0 4px 8px rgba(0,0,0,.06);
+}
+[data-theme="dark"]{
+  --bg:#060d1c; --surf:#0b1526; --surf2:#101e33; --surf3:#152238;
+  --bdr:#1a2d4a; --bdr2:#243a58;
+  --tx:#dde8f8; --tx1:#b0c4de; --tx2:#5a7a9f; --tx3:#2d4a68;
+  --ac:#60a5fa; --ac-h:#93c5fd; --ac-dim:rgba(96,165,250,.15); --ac-glow:rgba(96,165,250,.28);
+  --ok:#4ade80; --ok-dim:rgba(74,222,128,.1); --err:#f87171; --err-dim:rgba(248,113,113,.1);
+  --hbg:#040a16;
+  /* SYNTAX DARK — vivid high contrast */
+  --jk:#7dd3fc; --js:#4ade80; --jn:#fb923c;
+  --jb:#c084fc; --ju:#f472b6; --jB:#fcd34d; --jc:#1e3a58;
+  --ak:#c084fc; --as:#4ade80; --an:#fb923c;
+  --ac2:#7dd3fc; --acom:#2d4a68;
+  /* badges dark */
+  --bsg:#052e16; --bst:#86efac;
+  --bng:#431407; --bnt:#fdba74;
+  --bbg:#2e1065; --bbt:#d8b4fe;
+  --bog:#1e3a5f; --bot:#93c5fd;
+  --bag:#1e1b4b; --bat:#a5b4fc;
+  --bug:#0f1e30; --but:#5a7a9f;
+}
+
+/* ═══════════════════════════════════════════════
+   BASE
+═══════════════════════════════════════════════ */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden}
+body{
+  font-family:'Inter',system-ui,sans-serif;
+  background:var(--bg); color:var(--tx);
+  display:flex; flex-direction:column;
+  font-size:13px; line-height:1.5;
+  -webkit-font-smoothing:antialiased;
+}
+
+/* ═══════════════════════════════════════════════
+   HEADER
+═══════════════════════════════════════════════ */
+.hdr{
+  height:52px; flex-shrink:0;
+  background:var(--hbg);
+  border-bottom:1px solid var(--hbr);
+  display:flex; align-items:center;
+  padding:0 16px; gap:10px;
+  position:relative; z-index:100;
+}
+.hdr::before{
+  content:'';position:absolute;inset:0;
+  background-image:
+    linear-gradient(rgba(59,130,246,.06) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(59,130,246,.06) 1px,transparent 1px);
+  background-size:28px 28px;
+  pointer-events:none;
+}
+.brand{display:flex;align-items:center;gap:10px;position:relative;z-index:1}
+.brand-ico{
+  width:34px;height:34px;
+  background:linear-gradient(135deg,#3b82f6 0%,#8b5cf6 100%);
+  border-radius:9px;
+  display:flex;align-items:center;justify-content:center;
+  box-shadow:0 0 18px rgba(139,92,246,.45);
+  flex-shrink:0;
+}
+.brand-ico svg{width:18px;height:18px;color:#fff}
+.brand-tx{display:flex;flex-direction:column;gap:0}
+.brand-name{
+  font-size:15px;font-weight:800;letter-spacing:-.03em;line-height:1.1;
+  background:linear-gradient(135deg,#93c5fd 0%,#c4b5fd 100%);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+}
+.brand-sub{font-size:9.5px;color:#334155;font-weight:600;letter-spacing:.08em;text-transform:uppercase}
+.hdr-div{width:1px;height:20px;background:var(--hbr);flex-shrink:0}
+.hdr-space{flex:1}
+.hdr-group{display:flex;align-items:center;gap:5px;position:relative;z-index:1}
+.hbtn{
+  display:flex;align-items:center;gap:6px;
+  padding:6px 11px;
+  background:rgba(255,255,255,.05);
+  border:1px solid rgba(255,255,255,.07);
+  border-radius:var(--rs);
+  color:#6b8cae; font-size:12px;font-weight:500;font-family:inherit;
+  cursor:pointer;transition:all .15s;white-space:nowrap;
+}
+.hbtn:hover{background:rgba(255,255,255,.09);border-color:rgba(255,255,255,.14);color:#94a3b8;transform:translateY(-1px)}
+.hbtn:active{transform:translateY(0)}
+.hbtn.prime{background:rgba(59,130,246,.18);border-color:rgba(59,130,246,.38);color:#7dd3fc}
+.hbtn.prime:hover{background:rgba(59,130,246,.28);border-color:rgba(59,130,246,.6);color:#bfdbfe;box-shadow:0 0 14px rgba(59,130,246,.3)}
+.hbtn.ico{padding:6px 8px}
+.hbtn svg{width:14px;height:14px}
+.lpills{
+  display:flex;background:rgba(255,255,255,.04);
+  border:1px solid rgba(255,255,255,.07);border-radius:var(--rs);padding:2px;gap:2px;
+}
+.lpill{
+  padding:3px 10px;border-radius:3px;font-size:11px;font-weight:700;
+  color:#334155;cursor:pointer;border:none;background:none;font-family:inherit;
+  transition:all .15s;letter-spacing:.04em;
+}
+.lpill.on{background:rgba(59,130,246,.25);color:#7dd3fc}
+.lpill:hover:not(.on){color:#6b8cae;background:rgba(255,255,255,.05)}
+
+/* ═══════════════════════════════════════════════
+   SETTINGS TOOLBAR
+═══════════════════════════════════════════════ */
+.sbar{
+  height:44px;flex-shrink:0;
+  background:var(--surf);border-bottom:1px solid var(--bdr);
+  display:flex;align-items:center;padding:0 12px;gap:6px;
+  box-shadow:var(--sh1);
+}
+.slabel{font-size:10px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.07em;white-space:nowrap}
+.sgrp{
+  display:flex;align-items:center;gap:4px;
+  background:var(--surf2);border:1px solid var(--bdr);
+  border-radius:var(--rs);padding:4px 8px;
+  transition:border-color .15s,box-shadow .15s;
+}
+.sgrp:focus-within{border-color:var(--ac);box-shadow:0 0 0 3px var(--ac-dim)}
+.sdiv{width:1px;height:13px;background:var(--bdr2)}
+.sinp{
+  background:none;border:none;outline:none;
+  color:var(--tx);font-size:12px;
+  font-family:'JetBrains Mono',monospace;padding:0;
+}
+.sinp.w52{width:52px} .sinp.w38{width:38px} .sinp.w68{width:68px}
+.sinp::placeholder{color:var(--tx3)}
+.ssel{
+  background:none;border:none;outline:none;
+  color:var(--ac);font-size:11px;font-family:inherit;
+  font-weight:700;cursor:pointer;padding:0;
+  transition:opacity .15s;
+}
+.ssel:disabled{opacity:.3;cursor:not-allowed;color:var(--tx3)}
+.schk{
+  display:flex;align-items:center;gap:5px;
+  padding:4px 8px;border-radius:var(--rs);cursor:pointer;
+  transition:background .12s;
+}
+.schk:hover{background:var(--surf3)}
+.schk input{accent-color:var(--ac);cursor:pointer}
+.schk label{font-size:12px;font-weight:500;color:var(--tx2);cursor:pointer}
+.schk:has(input:checked) label{color:var(--ac)}
+.sspace{flex:1}
+.cbtn{
+  display:flex;align-items:center;gap:7px;
+  background:var(--ac);color:#fff;
+  border:none;padding:7px 16px;border-radius:var(--rs);
+  font-size:12px;font-weight:700;font-family:inherit;letter-spacing:.04em;
+  cursor:pointer;transition:all .15s;white-space:nowrap;
+  box-shadow:0 2px 10px var(--ac-glow);
+}
+.cbtn:hover{background:var(--ac-h);transform:translateY(-1px);box-shadow:0 4px 16px var(--ac-glow)}
+.cbtn:active{transform:translateY(0)}
+.cbtn svg{width:13px;height:13px}
+.cbtn .cspin{animation:spin .5s linear infinite;display:none}
+.cbtn.loading .cspin{display:block}
+.cbtn.loading .cgo{display:none}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ═══════════════════════════════════════════════
+   WORKSPACE
+═══════════════════════════════════════════════ */
+.ws{flex:1;display:flex;overflow:hidden;min-height:0}
+.panel{display:flex;flex-direction:column;overflow:hidden;min-width:150px}
+.pleft {width:22%;background:var(--surf);border-right:1px solid var(--bdr)}
+.pcenter{flex:1;background:var(--surf);min-width:0}
+.pright{width:32%;background:var(--surf);border-left:1px solid var(--bdr)}
+.dv{
+  width:5px;background:var(--bdr);cursor:col-resize;flex-shrink:0;
+  transition:background .15s;position:relative;z-index:10;
+}
+.dv:hover,.dv.drg{background:var(--ac)}
+
+/* Panel header */
+.phdr{
+  height:36px;background:var(--surf2);border-bottom:1px solid var(--bdr);
+  display:flex;align-items:center;padding:0 10px;gap:6px;flex-shrink:0;
+  position:relative;
+}
+.phdr::before{
+  content:'';position:absolute;left:0;top:20%;bottom:20%;
+  width:2.5px;border-radius:2px;
+  background:linear-gradient(to bottom,var(--ac),#8b5cf6);
+}
+.phdr-title{
+  font-size:10.5px;font-weight:700;color:var(--tx2);
+  text-transform:uppercase;letter-spacing:.07em;flex:1;
+}
+.pbtn{
+  width:24px;height:24px;display:flex;align-items:center;justify-content:center;
+  background:none;border:1px solid transparent;border-radius:4px;
+  color:var(--tx3);cursor:pointer;transition:all .12s;
+}
+.pbtn:hover{background:var(--surf3);border-color:var(--bdr);color:var(--tx1)}
+.pbtn:active{transform:scale(.9)}
+.pbtn.copied{color:var(--ok)!important}
+.pbtn svg{width:13px;height:13px}
+
+/* ═══════════════════════════════════════════════
+   JSON TREE
+═══════════════════════════════════════════════ */
+.tree-scroll{flex:1;overflow:auto;padding:6px 0}
+.tnode{user-select:none}
+.trow{
+  display:flex;align-items:center;gap:3px;
+  padding:3px 8px 3px 0;cursor:pointer;
+  border-radius:5px;margin:0 4px 1px;
+  transition:background .1s;min-width:0;
+}
+.trow:hover{background:var(--surf3)}
+.trow.sel{background:var(--ac-dim)}
+.ttog{
+  width:16px;height:16px;display:flex;align-items:center;justify-content:center;
+  color:var(--tx3);transition:transform .12s;flex-shrink:0;
+}
+.ttog.exp{transform:rotate(90deg)}
+.ttog svg{width:10px;height:10px}
+.tsp{width:16px;height:16px;flex-shrink:0}
+.tkey{
+  font-family:'JetBrains Mono',monospace;font-size:11.5px;
+  color:var(--jk);font-weight:500;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  flex-shrink:0;max-width:120px;
+}
+.tcol{color:var(--tx3);font-size:11px;flex-shrink:0;margin:0 1px}
+.tbadge{
+  font-size:9px;font-weight:700;padding:1px 5px;border-radius:3px;
+  flex-shrink:0;letter-spacing:.02em;text-transform:uppercase;
+}
+.bs{background:var(--bsg);color:var(--bst)}
+.bn{background:var(--bng);color:var(--bnt)}
+.bb{background:var(--bbg);color:var(--bbt)}
+.bo{background:var(--bog);color:var(--bot)}
+.ba{background:var(--bag);color:var(--bat)}
+.bu{background:var(--bug);color:var(--but)}
+.tval{
+  font-family:'JetBrains Mono',monospace;font-size:11px;
+  margin-left:4px;overflow:hidden;text-overflow:ellipsis;
+  white-space:nowrap;flex:1;min-width:0;
+}
+.tv-s{color:var(--js)} .tv-n{color:var(--jn)}
+.tv-b{color:var(--jb)} .tv-u{color:var(--ju);font-style:italic}
+.tchildren{display:none}
+.tchildren.open{display:block}
+.tcnt{font-size:9.5px;color:var(--tx3);margin-left:2px;flex-shrink:0}
+
+/* ═══════════════════════════════════════════════
+   MONACO
+═══════════════════════════════════════════════ */
+#monaco-container{flex:1;min-height:0;overflow:hidden}
+
+/* ═══════════════════════════════════════════════
+   OUTPUT TABS
+═══════════════════════════════════════════════ */
+.otabs{
+  display:flex;background:var(--surf2);border-bottom:1px solid var(--bdr);
+  flex-shrink:0;padding:0 4px;gap:1px;
+}
+.otab{
+  display:flex;align-items:center;gap:5px;
+  padding:8px 12px;font-size:11.5px;font-weight:500;color:var(--tx2);
+  cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;
+  background:none;border-top:none;border-left:none;border-right:none;
+  font-family:inherit;transition:all .12s;white-space:nowrap;
+}
+.otab:hover{color:var(--tx1);background:var(--surf3);border-radius:var(--rs) var(--rs) 0 0}
+.otab.on{color:var(--ac);border-bottom-color:var(--ac);background:var(--surf);border-radius:var(--rs) var(--rs) 0 0}
+.otab svg{width:12px;height:12px}
+.tbdg{
+  min-width:16px;height:16px;
+  background:var(--surf3);color:var(--tx3);
+  border-radius:8px;font-size:9.5px;font-weight:700;padding:0 4px;
+  display:inline-flex;align-items:center;justify-content:center;
+}
+.otab.on .tbdg{background:var(--ac-dim);color:var(--ac)}
+.opane{display:none;flex:1;overflow:hidden;flex-direction:column}
+.opane.on{display:flex}
+
+/* Output toolbar */
+.otbar{
+  height:34px;background:var(--surf2);border-bottom:1px solid var(--bdr);
+  display:flex;align-items:center;padding:0 8px;gap:4px;flex-shrink:0;
+}
+.otbar-lbl{
+  font-size:10.5px;font-weight:700;color:var(--tx2);
+  text-transform:uppercase;letter-spacing:.06em;flex:1;
+}
+.oview{flex:1;overflow:auto;display:flex;background:var(--surf)}
+.onums{
+  padding:12px 8px;font-family:'JetBrains Mono',monospace;
+  font-size:12px;line-height:20px;text-align:right;
+  color:var(--tx3);background:var(--surf2);border-right:1px solid var(--bdr);
+  min-width:44px;white-space:pre;user-select:none;flex-shrink:0;
+}
+.ocode{
+  flex:1;padding:12px 14px;font-family:'JetBrains Mono',monospace;
+  font-size:12.5px;line-height:20px;white-space:pre;color:var(--tx);
+}
+
+/* Empty state */
+.empty{
+  flex:1;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+  gap:12px;padding:30px;color:var(--tx3);
+  background:var(--surf);
+}
+.empty-ico{
+  width:52px;height:52px;
+  background:var(--surf2);border:1px solid var(--bdr);
+  border-radius:var(--rl);
+  display:flex;align-items:center;justify-content:center;
+}
+.empty-ico svg{width:24px;height:24px;color:var(--tx3)}
+.empty-t{font-size:13px;font-weight:600;color:var(--tx2)}
+.empty-s{font-size:11.5px;color:var(--tx3);text-align:center;max-width:200px}
+
+/* Validation */
+.vok{
+  margin:12px;padding:14px 16px;
+  background:var(--ok-dim);border:1px solid var(--ok);
+  border-radius:var(--r);
+  display:flex;align-items:center;gap:10px;
+  font-size:13px;font-weight:600;color:var(--ok);
+}
+.vok svg{width:20px;height:20px;flex-shrink:0}
+.verrors{padding:8px;display:flex;flex-direction:column;gap:4px}
+.veitem{
+  padding:10px 12px;
+  background:var(--err-dim);
+  border:1px solid rgba(220,38,38,.25);
+  border-radius:var(--rs);cursor:pointer;transition:background .12s;
+}
+[data-theme="dark"] .veitem{border-color:rgba(248,113,113,.2)}
+.veitem:hover{filter:brightness(1.1)}
+.ve-msg{font-size:12px;font-weight:600;color:var(--err)}
+.ve-loc{font-size:11px;color:var(--tx2);margin-top:3px;font-family:'JetBrains Mono',monospace}
+
+/* ═══════════════════════════════════════════════
+   STATUS BAR
+═══════════════════════════════════════════════ */
+.stbar{
+  height:24px;flex-shrink:0;
+  display:flex;align-items:center;padding:0 12px;gap:16px;
+  font-size:11px;color:rgba(255,255,255,.85);
+}
+.stbar.idle{background:var(--surf2);color:var(--tx2);border-top:1px solid var(--bdr)}
+.stbar.valid{background:#166534}
+.stbar.error{background:#991b1b}
+[data-theme="dark"] .stbar.valid{background:#14532d}
+[data-theme="dark"] .stbar.error{background:#7f1d1d}
+.sti{display:flex;align-items:center;gap:5px}
+.stdot{width:6px;height:6px;border-radius:50%;background:currentColor;opacity:.8}
+.stpulse{width:6px;height:6px;border-radius:50%;background:var(--ok);animation:pulse 2.5s infinite}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(.65)}}
+.str{margin-left:auto;display:flex;gap:16px;align-items:center}
+
+/* ═══════════════════════════════════════════════
+   SYNTAX — JSON & ABAP
+═══════════════════════════════════════════════ */
+.hk{color:var(--jk);font-weight:500}
+.hs{color:var(--js)}
+.hn{color:var(--jn)}
+.hb{color:var(--jb)}
+.hu{color:var(--ju);font-style:italic}
+.hB{color:var(--jB);font-weight:600}
+.hc{color:var(--jc)}
+.ak{color:var(--ak);font-weight:600}
+.as2{color:var(--as)}
+.an2{color:var(--an)}
+.acom{color:var(--acom);font-style:italic}
+.atp{color:var(--ac2);font-weight:500}
+
+/* ═══════════════════════════════════════════════
+   TOAST
+═══════════════════════════════════════════════ */
+#toast{
+  position:fixed;bottom:32px;right:24px;
+  padding:10px 16px 10px 12px;border-radius:var(--r);
+  font-size:13px;font-weight:500;
+  display:flex;align-items:center;gap:9px;
+  opacity:0;pointer-events:none;
+  transform:translateY(10px) scale(.97);
+  transition:all .22s cubic-bezier(.34,1.56,.64,1);
+  z-index:9999;box-shadow:var(--sh3);
+}
+#toast.show{opacity:1;transform:none}
+#toast.ok{background:#166534;color:#bbf7d0}
+#toast.er{background:#7f1d1d;color:#fecaca}
+#toast.in{background:var(--surf);color:var(--tx);border:1px solid var(--bdr)}
+#toast svg{width:15px;height:15px}
+
+/* ═══════════════════════════════════════════════
+   MODAL
+═══════════════════════════════════════════════ */
+.modal-bg{
+  display:none;position:fixed;inset:0;
+  background:rgba(0,0,0,.6);backdrop-filter:blur(8px);
+  z-index:1000;align-items:center;justify-content:center;
+}
+.modal-bg.open{display:flex}
+.mbox{
+  background:var(--surf);border:1px solid var(--bdr2);border-radius:var(--rl);
+  overflow:hidden;width:420px;max-width:92vw;
+  box-shadow:var(--sh3);animation:min .2s ease;
+}
+@keyframes min{from{opacity:0;transform:scale(.96) translateY(8px)}to{opacity:1;transform:none}}
+.mhdr{padding:18px 20px 14px;border-bottom:1px solid var(--bdr);display:flex;align-items:center;gap:10px}
+.mhdr-ico{
+  width:32px;height:32px;background:var(--ac-dim);border-radius:var(--rs);
+  display:flex;align-items:center;justify-content:center;
+}
+.mhdr-ico svg{width:16px;height:16px;color:var(--ac)}
+.mtitle{font-size:15px;font-weight:700;color:var(--tx)}
+.mclose{
+  margin-left:auto;width:28px;height:28px;
+  display:flex;align-items:center;justify-content:center;
+  border-radius:4px;cursor:pointer;color:var(--tx3);transition:all .12s;
+}
+.mclose:hover{background:var(--surf3);color:var(--tx)}
+.mclose svg{width:16px;height:16px}
+.mbody{padding:14px 20px 20px}
+.scrow{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:8px 0;border-bottom:1px solid var(--bdr);font-size:13px;
+}
+.scrow:last-child{border-bottom:none}
+.scdesc{color:var(--tx2)}
+.sckeys{display:flex;gap:3px}
+.kbd{
+  display:inline-flex;align-items:center;justify-content:center;
+  background:var(--surf2);border:1px solid var(--bdr2);border-bottom-width:2px;
+  border-radius:4px;padding:2px 7px;
+  font-size:11px;font-family:'JetBrains Mono',monospace;color:var(--tx1);min-width:26px;
+}
+
+/* ═══════════════════════════════════════════════
+   TOOLTIP
+═══════════════════════════════════════════════ */
+[data-tip]{position:relative}
+[data-tip]::after{
+  content:attr(data-tip);
+  position:absolute;bottom:calc(100% + 8px);left:50%;
+  transform:translateX(-50%);
+  background:#070f1e;color:#dde8f8;
+  border:1px solid #1a2d4a;
+  padding:5px 10px;border-radius:var(--rs);
+  font-size:11px;font-weight:500;white-space:nowrap;
+  opacity:0;pointer-events:none;transition:opacity .15s;
+  z-index:9999;box-shadow:0 4px 12px rgba(0,0,0,.35);
+}
+[data-tip]:hover::after{opacity:1}
+/* Header butonları ekranın üstünde olduğu için tooltip aşağı açılmalı */
+.hdr [data-tip]::after,
+.hdr [data-tip-key]::after {
+  bottom:auto;
+  top:calc(100% + 8px);
+}
+/* Sbar üzerindeki tooltip de aşağı açılsın */
+.sbar [data-tip]::after,
+.sbar [data-tip-key]::after {
+  bottom:auto;
+  top:calc(100% + 8px);
+}
+
+/* XML attribute badge */
+.bx{background:var(--bng);color:var(--bnt)}
+
+/* Format pills in header — same as language pills */
+.fpills{
+  display:flex;background:rgba(96,165,250,.08);
+  border:1px solid rgba(96,165,250,.18);border-radius:var(--rs);padding:2px;gap:2px;
+}
+.fpill{
+  padding:3px 10px;border-radius:3px;font-size:11px;font-weight:700;
+  color:#4a7aaa;cursor:pointer;border:none;background:none;font-family:inherit;
+  transition:all .15s;letter-spacing:.04em;
+}
+.fpill.on{background:rgba(59,130,246,.25);color:#7dd3fc}
+.fpill:hover:not(.on){color:#6b8cae;background:rgba(255,255,255,.05)}
+
+/* Hide/show elements based on format mode */
+[data-fmt-json]{} [data-fmt-xml]{}
+body.fmt-xml [data-fmt-json]{display:none!important}
+body.fmt-json [data-fmt-xml]{display:none!important}
+
+/* Scrollbar */
+::-webkit-scrollbar{width:7px;height:7px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--bdr2);border-radius:4px}
+::-webkit-scrollbar-thumb:hover{background:var(--tx3)}
+</style>
+</head>
+<body>
+
+<!-- ══════════ HEADER ══════════════════════════ -->
+<div class="hdr">
+  <div class="brand">
+    <div class="brand-ico">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+        <polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/>
+      </svg>
+    </div>
+    <div class="brand-tx">
+      <span class="brand-name">ABAP JSON Architect</span>
+    </div>
+  </div>
+
+  <div class="hdr-div"></div>
+
+  <div class="fpills">
+    <button class="fpill on" id="fp-json" onclick="setFormat('json')">JSON</button>
+    <button class="fpill" id="fp-xml" onclick="setFormat('xml')">XML</button>
+  </div>
+
+  <div class="hdr-div"></div>
+
+  <div class="hdr-group">
+    <button class="hbtn" onclick="fmtInput()" id="btn-fmt" data-tip-key="tipFormat">
+      <i data-lucide="align-left"></i><span data-lang="btnFormat">Formatla</span>
+    </button>
+    <button class="hbtn" onclick="showValidation()" id="btn-val" data-tip-key="tipValidate">
+      <i data-lucide="shield-check"></i><span data-lang="btnValidate">Doğrula</span>
+    </button>
+    <button class="hbtn prime" onclick="doConvert()" id="btn-gen" data-tip-key="tipGenerate">
+      <i data-lucide="zap"></i><span data-lang="btnGenerate">ABAP Üret</span>
+    </button>
+  </div>
+
+  <div class="hdr-space"></div>
+
+  <div class="hdr-group">
+    <a href="https://www.linkedin.com/in/murattahtacii/" target="_blank"
+       style="display:flex;align-items:center;gap:5px;text-decoration:none;color:#5a7a9f;font-size:12px;font-weight:500;padding:5px 9px;border-radius:var(--rs);transition:all .15s"
+       onmouseover="this.style.color='#60a5fa';this.style.background='rgba(96,165,250,.1)'"
+       onmouseout="this.style.color='#5a7a9f';this.style.background=''">
+      <i data-lucide="linkedin" style="width:13px;height:13px"></i>
+      <span data-lang="devName">Murat Tahtacı</span>
+    </a>
+    <div class="hdr-div"></div>
+    <div class="lpills">
+      <button class="lpill" id="lp-tr" onclick="setLang('tr')">TR</button>
+      <button class="lpill on" id="lp-en" onclick="setLang('en')">EN</button>
+    </div>
+    <button class="hbtn ico" onclick="toggleTheme()" data-tip-key="tipTheme">
+      <i data-lucide="sun-moon"></i>
+    </button>
+    <button class="hbtn ico" onclick="openModal()" data-tip-key="tipShortcuts">
+      <i data-lucide="keyboard"></i>
+    </button>
+  </div>
+</div>
+
+<!-- ══════════ SETTINGS ════════════════════════ -->
+<div class="sbar">
+  <span class="slabel" data-lang="slSettings">Ayarlar</span>
+
+  <div class="sgrp" data-tip-key="tipRoot">
+    <span class="slabel">Root</span>
+    <div class="sdiv"></div>
+    <input class="sinp w68" id="cf-root" value="ROOT" oninput="schedConvert()">
+  </div>
+
+  <div class="sgrp" data-tip-key="tipStr">
+    <span class="slabel" data-lang="slStr">Str</span>
+    <div class="sdiv"></div>
+    <input class="sinp w38" id="cf-str" value="TS_" oninput="schedConvert()">
+  </div>
+
+  <div class="sgrp" data-tip-key="tipTab">
+    <span class="slabel" data-lang="slTab">Tab</span>
+    <div class="sdiv"></div>
+    <input class="sinp w38" id="cf-tab" value="TT_" oninput="schedConvert()">
+  </div>
+
+  <div class="sgrp" data-tip-key="tipSuffix">
+    <span class="slabel" data-lang="slSuffix">Suffix</span>
+    <div class="sdiv"></div>
+    <input class="sinp w52" id="cf-sfx" placeholder="örn: _f" oninput="schedConvert();updSfx()">
+    <div class="sdiv"></div>
+    <select class="ssel" id="cf-sfxt" onchange="schedConvert()" disabled>
+      <option value="abap" data-lang="sfxAbap">→ ABAP</option>
+      <option value="json" data-lang="sfxJson">→ JSON</option>
+    </select>
+  </div>
+
+  <div class="schk" data-tip-key="tipSnake">
+    <input type="checkbox" id="cf-snake" checked onchange="schedConvert()">
+    <label for="cf-snake" data-lang="slSnake">Snake_Case</label>
+  </div>
+
+  <div class="schk" data-fmt-xml data-tip-key="tipAttrMode">
+    <input type="checkbox" id="cf-attrflat" checked onchange="schedConvert()">
+    <label for="cf-attrflat" data-lang="slAttrFlat">Attr: Flat</label>
+  </div>
+
+  <div class="sspace"></div>
+
+  <button class="cbtn" id="cbtn" onclick="fmt==='xml'?doConvertXml():doConvert()">
+    <i data-lucide="loader-2" class="cspin"></i>
+    <i data-lucide="play" class="cgo" style="width:12px;height:12px"></i>
+    <span data-lang="btnConvert">DÖNÜŞTÜR</span>
+  </button>
+</div>
+
+<!-- ══════════ WORKSPACE ══════════════════════ -->
+<div class="ws">
+
+  <!-- LEFT: Tree -->
+  <div class="panel pleft" id="pl">
+    <div class="phdr">
+      <span class="phdr-title" id="tree-title" data-lang="panelTree">JSON Ağaç</span>
+      <button class="pbtn" id="btn-expand-all" onclick="treeExpandAll(true)" data-tip-key="tipExpandAll">
+        <i data-lucide="unfold-vertical"></i>
+      </button>
+      <button class="pbtn" onclick="treeExpandAll(false)" data-tip-key="tipCollapseAll">
+        <i data-lucide="fold-vertical"></i>
+      </button>
+    </div>
+    <div class="tree-scroll" id="tree-root">
+      <div class="empty" id="tree-empty">
+        <div class="empty-ico"><i data-lucide="git-branch-plus"></i></div>
+        <span class="empty-t" data-lang="treeEmpty">JSON Ağacı</span>
+        <span class="empty-s" data-lang="treeEmptyHint">Geçerli JSON girin</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="dv" id="dv1"></div>
+
+  <!-- CENTER: Monaco -->
+  <div class="panel pcenter" id="pc">
+    <div class="phdr">
+      <span class="phdr-title" id="editor-title" data-lang="panelEditor">JSON Editör</span>
+      <button class="pbtn" onclick="fmtInput()" data-tip-key="tipFormat">
+        <i data-lucide="align-left"></i>
+      </button>
+      <button class="pbtn" onclick="loadSample()" data-tip-key="tipSample">
+        <i data-lucide="flask-conical"></i>
+      </button>
+    </div>
+    <div id="monaco-container"></div>
+  </div>
+
+  <div class="dv" id="dv2"></div>
+
+  <!-- RIGHT: Output -->
+  <div class="panel pright" id="pr">
+    <div class="otabs" id="output-tabs">
+      <button class="otab on" data-tab="types" onclick="switchTab('types')">
+        <i data-lucide="code-2"></i>
+        <span data-lang="tabTypes">ABAP Types</span>
+        <span class="tbdg" id="bdg-types"></span>
+      </button>
+      <button class="otab" data-tab="mapping" data-fmt-json onclick="switchTab('mapping')">
+        <i data-lucide="arrow-left-right"></i>
+        <span data-lang="tabMapping">Mapping</span>
+        <span class="tbdg" id="bdg-mapping"></span>
+      </button>
+      <button class="otab" data-tab="ixml" data-fmt-xml onclick="switchTab('ixml')">
+        <i data-lucide="code-2"></i>
+        <span data-lang="tabIxml">iXML Code</span>
+      </button>
+      <button class="otab" data-tab="st" data-fmt-xml onclick="switchTab('st')">
+        <i data-lucide="file-code-2"></i>
+        <span data-lang="tabSt">Simple Trans.</span>
+      </button>
+      <button class="otab" data-tab="template" onclick="switchTab('template')">
+        <i data-lucide="file-code-2"></i>
+        <span data-lang="tabTemplate">Template</span>
+      </button>
+      <button class="otab" data-tab="validate" onclick="switchTab('validate')">
+        <i data-lucide="shield-check"></i>
+        <span data-lang="tabValidate">Doğrulama</span>
+        <span class="tbdg" id="bdg-val" style="display:none"></span>
+      </button>
+    </div>
+
+    <!-- TYPES -->
+    <div class="opane on" id="pane-types">
+      <div class="otbar">
+        <span class="otbar-lbl" data-lang="lblTypes">Structure</span>
+        <button class="pbtn" onclick="dlOut('types')" data-tip-key="tipDownload"><i data-lucide="download"></i></button>
+        <button class="pbtn" id="cp-types" onclick="cpOut('types')" data-tip-key="tipCopy"><i data-lucide="copy"></i></button>
+      </div>
+      <div class="empty" id="emp-types">
+        <div class="empty-ico"><i data-lucide="code-2"></i></div>
+        <span class="empty-t" data-lang="empTypes">ABAP Types Boş</span>
+        <span class="empty-s" data-lang="empTypesHint">JSON girerek types üretin</span>
+      </div>
+      <div class="oview" id="wrp-types" style="display:none">
+        <div class="onums" id="ln-types"></div>
+        <div class="ocode" id="out-types"></div>
+      </div>
+    </div>
+
+    <!-- MAPPING -->
+    <div class="opane" id="pane-mapping">
+      <div class="otbar">
+        <span class="otbar-lbl" data-lang="lblMapping">Mapping</span>
+        <button class="pbtn" onclick="dlOut('mapping')" data-tip-key="tipDownload"><i data-lucide="download"></i></button>
+        <button class="pbtn" id="cp-mapping" onclick="cpOut('mapping')" data-tip-key="tipCopy"><i data-lucide="copy"></i></button>
+      </div>
+      <div class="empty" id="emp-mapping">
+        <div class="empty-ico"><i data-lucide="arrow-left-right"></i></div>
+        <span class="empty-t" data-lang="empMapping">Mapping Yok</span>
+        <span class="empty-s" data-lang="empMappingHint">Suffix ekleyerek mapping üretin</span>
+      </div>
+      <div class="oview" id="wrp-mapping" style="display:none">
+        <div class="onums" id="ln-mapping"></div>
+        <div class="ocode" id="out-mapping"></div>
+      </div>
+    </div>
+
+    <!-- iXML CODE (XML mode) -->
+    <div class="opane" id="pane-ixml">
+      <div class="otbar">
+        <span class="otbar-lbl" data-lang="lblIxml">iXML Parsing Code</span>
+        <button class="pbtn" onclick="dlOut('ixml')" data-tip-key="tipDownload"><i data-lucide="download"></i></button>
+        <button class="pbtn" id="cp-ixml" onclick="cpOut('ixml')" data-tip-key="tipCopy"><i data-lucide="copy"></i></button>
+      </div>
+      <div class="empty" id="emp-ixml">
+        <div class="empty-ico"><i data-lucide="code-2"></i></div>
+        <span class="empty-t" data-lang="empIxml">iXML Code Empty</span>
+        <span class="empty-s" data-lang="empIxmlHint">Enter XML to generate iXML parsing code</span>
+      </div>
+      <div class="oview" id="wrp-ixml" style="display:none">
+        <div class="onums" id="ln-ixml"></div>
+        <div class="ocode" id="out-ixml"></div>
+      </div>
+    </div>
+
+    <!-- SIMPLE TRANSFORMATION (XML mode) -->
+    <div class="opane" id="pane-st">
+      <div class="otbar">
+        <span class="otbar-lbl" data-lang="lblSt">Simple Transformation</span>
+        <button class="pbtn" onclick="dlOut('st')" data-tip-key="tipDownload"><i data-lucide="download"></i></button>
+        <button class="pbtn" id="cp-st" onclick="cpOut('st')" data-tip-key="tipCopy"><i data-lucide="copy"></i></button>
+      </div>
+      <div class="empty" id="emp-st">
+        <div class="empty-ico"><i data-lucide="file-code-2"></i></div>
+        <span class="empty-t" data-lang="empSt">ST Source Empty</span>
+        <span class="empty-s" data-lang="empStHint">Enter XML to generate Simple Transformation</span>
+      </div>
+      <div class="oview" id="wrp-st" style="display:none">
+        <div class="onums" id="ln-st"></div>
+        <div class="ocode" id="out-st"></div>
+      </div>
+    </div>
+
+    <!-- TEMPLATE -->
+    <div class="opane" id="pane-template">
+      <div class="otbar">
+        <span class="otbar-lbl" data-lang="lblTemplate">Code Template</span>
+        <button class="pbtn" onclick="dlOut('template')" data-tip-key="tipDownload"><i data-lucide="download"></i></button>
+        <button class="pbtn" id="cp-template" onclick="cpOut('template')" data-tip-key="tipCopy"><i data-lucide="copy"></i></button>
+      </div>
+      <div class="oview">
+        <div class="onums" id="ln-template"></div>
+        <div class="ocode" id="out-template"></div>
+      </div>
+    </div>
+
+    <!-- VALIDATE -->
+    <div class="opane" id="pane-validate">
+      <div class="otbar">
+        <span class="otbar-lbl" data-lang="lblValidate">Doğrulama</span>
+      </div>
+      <div style="flex:1;overflow:auto;background:var(--surf)" id="val-content">
+        <div class="empty">
+          <div class="empty-ico"><i data-lucide="shield"></i></div>
+          <span class="empty-t" data-lang="valEmpty">Sonuç Bekleniyor</span>
+          <span class="empty-s" data-lang="valEmptyHint">JSON yazın veya Doğrula'ya tıklayın</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════ STATUS BAR ══════════════════════ -->
+<div class="stbar idle" id="stbar">
+  <div class="sti"><span class="stdot"></span><span id="st-msg" data-lang="stReady">Hazır</span></div>
+  <div class="str">
+    <div class="sti" id="st-lines" style="display:none">
+      <i data-lucide="file-text" style="width:11px;height:11px"></i>
+      <span id="st-lc"></span>
+    </div>
+    <div class="sti" id="st-cur" style="display:none">
+      <i data-lucide="text-cursor" style="width:11px;height:11px"></i>
+      <span id="st-pos"></span>
+    </div>
+    <div class="sti" id="st-time" style="display:none">
+      <i data-lucide="zap" style="width:11px;height:11px"></i>
+      <span id="st-ms"></span>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div id="toast"><span id="ti"></span><span id="tm"></span></div>
+
+<!-- MODAL -->
+<div class="modal-bg" id="modal" onclick="maybeClose(event)">
+  <div class="mbox">
+    <div class="mhdr">
+      <div class="mhdr-ico"><i data-lucide="keyboard"></i></div>
+      <span class="mtitle" data-lang="modalTitle">Klavye Kısayolları</span>
+      <div class="mclose" onclick="closeModal()"><i data-lucide="x"></i></div>
+    </div>
+    <div class="mbody">
+      <div class="scrow"><span class="scdesc" data-lang="sc1">ABAP Üret / Dönüştür</span><span class="sckeys"><span class="kbd">Ctrl</span><span class="kbd">Enter</span></span></div>
+      <div class="scrow"><span class="scdesc" data-lang="sc2">JSON Formatla</span><span class="sckeys"><span class="kbd">Ctrl</span><span class="kbd">Shift</span><span class="kbd">F</span></span></div>
+      <div class="scrow"><span class="scdesc" data-lang="sc3">Doğrula</span><span class="sckeys"><span class="kbd">Ctrl</span><span class="kbd">Shift</span><span class="kbd">V</span></span></div>
+      <div class="scrow"><span class="scdesc" data-lang="sc4">Aktif Sekmeyi Kopyala</span><span class="sckeys"><span class="kbd">Ctrl</span><span class="kbd">Shift</span><span class="kbd">C</span></span></div>
+      <div class="scrow"><span class="scdesc" data-lang="sc5">Tema Değiştir</span><span class="sckeys"><span class="kbd">Ctrl</span><span class="kbd">Shift</span><span class="kbd">T</span></span></div>
+      <div class="scrow"><span class="scdesc" data-lang="sc6">Bu Ekranı Göster</span><span class="sckeys"><span class="kbd">?</span></span></div>
+    </div>
+  </div>
+</div>
+
+<script>
+'use strict';
+
+/* ══════════════════════════════════════════════
+   TRANSLATIONS
+══════════════════════════════════════════════ */
+const L = {
+  tr:{
+    devName:'Murat Tahtacı',
+    btnFormat:'Formatla', btnValidate:'Doğrula', btnGenerate:'ABAP Üret', btnConvert:'DÖNÜŞTÜR',
+    slSettings:'Ayarlar', slStr:'Str', slTab:'Tab', slSuffix:'Suffix', slSnake:'Snake_Case',
+    phRoot:'(Boş)', sfxAbap:'→ ABAP', sfxJson:'→ JSON',
+    panelTree:'JSON Ağaç', panelEditor:'JSON Editör',
+    tabTypes:'ABAP Types', tabMapping:'Mapping', tabTemplate:'Template', tabValidate:'Doğrulama',
+    lblTypes:'Structure', lblMapping:'Mapping Logic', lblTemplate:'Code Template', lblValidate:'Doğrulama',
+    empTypes:'ABAP Types Boş', empTypesHint:'JSON girerek types üretin', empTypesHintXml:'XML girerek types üretin',
+    empMapping:'Mapping Yok', empMappingHint:'Suffix ekleyerek veya özel karakterli alanlarda mapping üretilir',
+    valEmpty:'Sonuç Bekleniyor', valEmptyHint:'JSON yazın veya Doğrula\'ya tıklayın',
+    treeEmpty:'JSON Ağacı', treeEmptyHint:'Geçerli JSON girin',
+    stReady:'Hazır', stValid:'JSON Geçerli ✓', stError:'JSON Geçersiz',
+    stEmpty:'Editör Boş',
+    modalTitle:'Klavye Kısayolları',
+    sc1:'ABAP Üret / Dönüştür', sc2:'JSON Formatla', sc3:'Doğrula',
+    sc4:'Aktif Sekmeyi Kopyala', sc5:'Tema Değiştir', sc6:'Bu Ekranı Göster',
+    // tooltips
+    tipFormat:'JSON Formatla (Ctrl+Shift+F)',
+    tipValidate:'JSON Doğrula (Ctrl+Shift+V)',
+    tipGenerate:'ABAP Kodu Üret (Ctrl+Enter)',
+    tipConvert:'Dönüştür (Ctrl+Enter)',
+    tipRoot:'Root yapı adı — boşsa prefix\'ten _ kaldırılır',
+    tipStr:'Structure type ön eki (örn: TS_)',
+    tipTab:'Table type ön eki (örn: TT_)',
+    tipSuffix:'Alan adı soneki — hedef (→ ABAP veya → JSON) suffix dolu olunca aktif olur',
+    tipSnake:'camelCase alanları SNAKE_CASE\'e dönüştür',
+    tipTheme:'Tema Değiştir (Ctrl+Shift+T)',
+    tipShortcuts:'Kısayollar (?)',
+    tipExpandAll:'Tümünü Genişlet',
+    tipCollapseAll:'Tümünü Daralt',
+    tipDownload:'İndir (.abap)',
+    tipCopy:'Kopyala (Ctrl+Shift+C)',
+    tipSample:'Örnek SAP JSON Yükle',
+    tipAttrMode:'XML özellikleri: işaretli=düz birleştir, işaretsiz=iç yapı',
+    slAttrFlat:'Attr: Düz',
+    // xml panels
+    panelTreeXml:'XML Ağaç', panelEditorXml:'XML Editör',
+    tabIxml:'iXML Kodu', tabSt:'Basit Dönüşüm',
+    lblIxml:'iXML Ayrıştırma Kodu', lblSt:'Basit Dönüşüm',
+    empIxml:'iXML Kodu Boş', empIxmlHint:'iXML ayrıştırma kodu üretmek için XML girin',
+    empSt:'ST Kaynağı Boş', empStHint:'Basit Dönüşüm üretmek için XML girin',
+    tipSampleXml:'Örnek SAP XML Yükle',
+    stValidXml:'XML Geçerli ✓', stErrorXml:'XML Geçersiz',
+    treeEmptyXml:'XML Ağacı', treeEmptyHintXml:'Geçerli XML girin',
+    // toasts
+    cpOk:'Kopyalandı!', cpTypes:'Types kopyalandı', cpMapping:'Mapping kopyalandı',
+    cpTemplate:'Template kopyalandı', cpIxml:'iXML kodu kopyalandı', cpSt:'ST kopyalandı',
+    dlOk:'Dosya indirildi',
+    fmtOk:'JSON formatlandı', fmtErr:'Geçersiz JSON — formatlanamadı',
+    fmtOkXml:'XML formatlandı', fmtErrXml:'Geçersiz XML — formatlanamadı',
+    valOk:'JSON geçerli ✓', valErr:'JSON geçersiz',
+    valOkXml:'XML geçerli ✓', valErrXml:'XML geçersiz',
+    // validation panel
+    vOk:'JSON geçerli ve iyi biçimlendirilmiş ✓',
+    vOkXml:'XML geçerli ve iyi biçimlendirilmiş ✓',
+    vErrTitle:'JSON Hataları', vErrTitleXml:'XML Hataları',
+    vLine:'Satır', vCol:'Sütun',
+    // status
+    sLines:'satır',
+  },
+  en:{
+    devName:'Murat Tahtacı',
+    btnFormat:'Format', btnValidate:'Validate', btnGenerate:'Gen ABAP', btnConvert:'CONVERT',
+    slSettings:'Settings', slStr:'Str', slTab:'Tab', slSuffix:'Suffix', slSnake:'Snake_Case',
+    phRoot:'(Empty)', sfxAbap:'→ ABAP', sfxJson:'→ JSON',
+    panelTree:'JSON Tree', panelEditor:'JSON Editor',
+    tabTypes:'ABAP Types', tabMapping:'Mapping', tabTemplate:'Template', tabValidate:'Validate',
+    lblTypes:'Structure', lblMapping:'Mapping Logic', lblTemplate:'Code Template', lblValidate:'Validation',
+    empTypes:'ABAP Types Empty', empTypesHint:'Enter JSON to generate types', empTypesHintXml:'Enter XML to generate types',
+    empMapping:'No Mapping', empMappingHint:'Add a suffix or use special-char fields to generate mapping',
+    valEmpty:'Awaiting Result', valEmptyHint:'Type JSON or click Validate',
+    treeEmpty:'JSON Tree', treeEmptyHint:'Enter valid JSON',
+    stReady:'Ready', stValid:'JSON Valid ✓', stError:'JSON Invalid',
+    stEmpty:'Editor Empty',
+    modalTitle:'Keyboard Shortcuts',
+    sc1:'Generate / Convert ABAP', sc2:'Format JSON', sc3:'Validate',
+    sc4:'Copy Active Tab', sc5:'Toggle Theme', sc6:'Show This Screen',
+    tipFormat:'Format JSON (Ctrl+Shift+F)',
+    tipValidate:'Validate JSON (Ctrl+Shift+V)',
+    tipGenerate:'Generate ABAP Code (Ctrl+Enter)',
+    tipConvert:'Convert (Ctrl+Enter)',
+    tipRoot:'Root struct name — if empty, trailing _ is removed from prefix',
+    tipStr:'Structure type prefix (e.g. TS_)',
+    tipTab:'Table type prefix (e.g. TT_)',
+    tipSuffix:'Field name suffix — target (→ ABAP or → JSON) is active only when suffix is set',
+    tipSnake:'Convert camelCase fields to SNAKE_CASE',
+    tipTheme:'Toggle Theme (Ctrl+Shift+T)',
+    tipShortcuts:'Shortcuts (?)',
+    tipExpandAll:'Expand All',
+    tipCollapseAll:'Collapse All',
+    tipDownload:'Download (.abap)',
+    tipCopy:'Copy (Ctrl+Shift+C)',
+    tipSample:'Load Sample SAP JSON',
+    tipAttrMode:'XML attributes: checked=flat merge, unchecked=nested struct',
+    slAttrFlat:'Attr: Flat',
+    // xml panels
+    panelTreeXml:'XML Tree', panelEditorXml:'XML Editor',
+    tabIxml:'iXML Code', tabSt:'Simple Trans.',
+    lblIxml:'iXML Parsing Code', lblSt:'Simple Transformation',
+    empIxml:'iXML Code Empty', empIxmlHint:'Enter XML to generate iXML parsing code',
+    empSt:'ST Source Empty', empStHint:'Enter XML to generate Simple Transformation',
+    tipSampleXml:'Load Sample SAP XML',
+    stValidXml:'XML Valid ✓', stErrorXml:'XML Invalid',
+    treeEmptyXml:'XML Tree', treeEmptyHintXml:'Enter valid XML',
+    cpOk:'Copied!', cpTypes:'Types copied', cpMapping:'Mapping copied',
+    cpTemplate:'Template copied', cpIxml:'iXML code copied', cpSt:'ST copied',
+    dlOk:'File downloaded',
+    fmtOk:'JSON formatted', fmtErr:'Invalid JSON — cannot format',
+    fmtOkXml:'XML formatted', fmtErrXml:'Invalid XML — cannot format',
+    valOk:'JSON is valid ✓', valErr:'JSON is invalid',
+    valOkXml:'XML is valid ✓', valErrXml:'XML is invalid',
+    vOk:'JSON is valid and well-formed ✓',
+    vOkXml:'XML is valid and well-formed ✓',
+    vErrTitle:'JSON Errors', vErrTitleXml:'XML Errors',
+    vLine:'Line', vCol:'Col',
+    sLines:'lines',
+  }
+};
+
+let lang = localStorage.getItem('lang') || 'tr';
+const t = k => (L[lang]||L.tr)[k] || k;
+
+function setLang(l){
+  lang = l; localStorage.setItem('lang',l);
+  applyLang(); updateTips();
+  if(fmt==='xml') genXmlTemplate(); else genTemplate();
+  schedConvert();
+}
+function applyLang(){
+  const m = L[lang]||L.tr;
+  document.documentElement.lang = lang;
+  document.querySelectorAll('[data-lang]').forEach(n=>{
+    if(m[n.dataset.lang]!==undefined) n.textContent=m[n.dataset.lang];
+  });
+  document.querySelectorAll('[data-lang-ph]').forEach(n=>{
+    if(m[n.dataset.langPh]!==undefined) n.placeholder=m[n.dataset.langPh];
+  });
+  document.querySelectorAll('.lpill').forEach(b=>b.classList.remove('on'));
+  const lp = document.getElementById('lp-'+lang);
+  if(lp) lp.classList.add('on');
+  // Suffix select options
+  const sel = document.getElementById('cf-sfxt');
+  sel.options[0].textContent = m.sfxAbap || '→ ABAP';
+  sel.options[1].textContent = m.sfxJson || '→ JSON';
+  // Reapply format-specific titles after language change
+  if(typeof applyFormat === 'function') applyFormat(fmt);
+}
+function updateTips(){
+  const m = L[lang]||L.tr;
+  document.querySelectorAll('[data-tip-key]').forEach(el=>{
+    const v = m[el.dataset.tipKey];
+    if(v) el.setAttribute('data-tip',v);
+  });
+}
+
+/* ══════════════════════════════════════════════
+   THEME
+══════════════════════════════════════════════ */
+function toggleTheme(){
+  const d = document.documentElement;
+  const n = d.dataset.theme==='dark'?'light':'dark';
+  d.dataset.theme = n;
+  localStorage.setItem('theme',n);
+  if(editor) monaco.editor.setTheme(n==='dark'?'vs-dark':'vs');
+}
+(()=>{ const s=localStorage.getItem('theme'); if(s) document.documentElement.dataset.theme=s; })();
+
+/* ══════════════════════════════════════════════
+   SAMPLE JSON
+══════════════════════════════════════════════ */
+const SAMPLE = JSON.stringify({
+  "salesOrder":{
+    "orderId":"4500001234",
+    "orderDate":"2024-01-15",
+    "customerNumber":"0000012345",
+    "salesOrganization":"1000",
+    "distributionChannel":"10",
+    "isPriority":true,
+    "totalAmount":14850.50,
+    "items":[{
+      "itemNumber":"000010",
+      "materialNumber":"MAT-001-A",
+      "description":"HDPE Pipe 50mm",
+      "quantity":150,
+      "unitOfMeasure":"EA",
+      "netPrice":99.0,
+      "currency":"USD"
+    }],
+    "header":{
+      "purchaseOrderNumber":"PO-2024-001",
+      "requestedDeliveryDate":"2024-02-15",
+      "shippingCondition":"01",
+      "paymentTerms":"NT30"
+    }
+  }
+}, null, 2);
+
+/* ══════════════════════════════════════════════
+   XML SAMPLE
+══════════════════════════════════════════════ */
+const SAMPLE_XML = `<?xml version="1.0" encoding="UTF-8"?>
+<salesOrder>
+  <orderId>4500001234</orderId>
+  <orderDate>2024-01-15</orderDate>
+  <customerNumber>0000012345</customerNumber>
+  <salesOrganization>1000</salesOrganization>
+  <distributionChannel>10</distributionChannel>
+  <isPriority>true</isPriority>
+  <totalAmount>14850.50</totalAmount>
+  <items>
+    <item>
+      <itemNumber>000010</itemNumber>
+      <materialNumber>MAT-001-A</materialNumber>
+      <description>HDPE Pipe 50mm</description>
+      <quantity>150</quantity>
+      <unitOfMeasure>EA</unitOfMeasure>
+      <netPrice>99.0</netPrice>
+      <currency>USD</currency>
+    </item>
+    <item>
+      <itemNumber>000020</itemNumber>
+      <materialNumber>MAT-002-B</materialNumber>
+      <description>PVC Fitting 25mm</description>
+      <quantity>50</quantity>
+      <unitOfMeasure>EA</unitOfMeasure>
+      <netPrice>45.0</netPrice>
+      <currency>USD</currency>
+    </item>
+  </items>
+  <header purchaseOrderNumber="PO-2024-001" shippingCondition="01">
+    <requestedDeliveryDate>2024-02-15</requestedDeliveryDate>
+    <paymentTerms>NT30</paymentTerms>
+  </header>
+</salesOrder>`;
+
+/* ══════════════════════════════════════════════
+   FORMAT STATE
+══════════════════════════════════════════════ */
+let fmt = 'json';
+let _manualFmt = false; // true when user explicitly chose format via toggle
+
+function detectFormat(text){
+  const trimmed = text.trim();
+  if(trimmed.startsWith('<?xml') || (trimmed.startsWith('<') && !trimmed.startsWith('{'))) return 'xml';
+  return 'json';
+}
+
+function applyFormat(f){
+  document.body.className = 'fmt-'+f;
+  document.querySelectorAll('.fpill').forEach(b=>b.classList.toggle('on', b.id==='fp-'+f));
+  var treeTitle = document.getElementById('tree-title');
+  var editorTitle = document.getElementById('editor-title');
+  if(f==='xml'){
+    treeTitle.textContent = t('panelTreeXml');
+    editorTitle.textContent = t('panelEditorXml');
+  } else {
+    treeTitle.textContent = t('panelTree');
+    editorTitle.textContent = t('panelEditor');
+  }
+  if(editor){
+    var model = editor.getModel();
+    if(model) monaco.editor.setModelLanguage(model, f==='xml'?'xml':'json');
+  }
+  // Update format-sensitive empty state hints and tooltips
+  var empTypesHint = document.querySelector('#emp-types .empty-s');
+  if(empTypesHint) empTypesHint.textContent = t(f==='xml'?'empTypesHintXml':'empTypesHint');
+  // Update sample button tooltip
+  var sampleBtn = document.querySelector('[data-tip-key="tipSample"]');
+  if(sampleBtn) sampleBtn.setAttribute('data-tip', t(f==='xml'?'tipSampleXml':'tipSample'));
+}
+
+function setFormat(f){
+  fmt = f;
+  _manualFmt = true;
+  applyFormat(f);
+  switchTab('types');
+  onEditorChange();
+}
+
+/* ══════════════════════════════════════════════
+   XML PARSER
+══════════════════════════════════════════════ */
+function parseXML(xmlString){
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(xmlString, 'application/xml');
+  const err = doc.querySelector('parsererror');
+  if(err) return { doc:null, error: err.textContent };
+  return { doc, error: null };
+}
+
+/* ══════════════════════════════════════════════
+   XML TREE VIEW
+══════════════════════════════════════════════ */
+function renderXmlTree(doc){
+  const r = document.getElementById('tree-root');
+  _nid = 0;
+  r.textContent = '';
+  const frag = document.createDocumentFragment();
+  const wrapper = document.createElement('div');
+  wrapper.innerHTML = buildXmlNode(doc.documentElement, 0);
+  while(wrapper.firstChild) frag.appendChild(wrapper.firstChild);
+  r.appendChild(frag);
+  r.querySelectorAll('.ttog').forEach(btn=>{
+    btn.addEventListener('click', e=>{
+      e.stopPropagation();
+      const ch = document.getElementById('ch-'+btn.dataset.id);
+      const open = ch.classList.toggle('open');
+      btn.classList.toggle('exp', open);
+    });
+  });
+  r.querySelectorAll('.trow').forEach(row=>{
+    row.addEventListener('click', ()=>{
+      const tag = row.dataset.key;
+      if(tag && editor){
+        const matches = editor.getModel().findMatches('<'+tag,false,false,true,null,true);
+        if(matches.length){
+          editor.revealLineInCenter(matches[0].range.startLineNumber);
+          editor.setPosition({lineNumber:matches[0].range.startLineNumber,column:1});
+          editor.focus();
+        }
+      }
+      r.querySelectorAll('.trow.sel').forEach(x=>x.classList.remove('sel'));
+      row.classList.add('sel');
+    });
+  });
+  safeIcons();
+}
+
+function buildXmlNode(node, depth){
+  if(!node || node.nodeType !== 1) return '';
+  const id = _nid++;
+  const indent = depth*16;
+  const tag = node.tagName;
+  const childElements = Array.from(node.children);
+  const attrs = node.attributes;
+  const hasChildren = childElements.length > 0 || attrs.length > 0;
+  const textContent = childElements.length === 0 ? (node.textContent||'').trim() : '';
+
+  if(!hasChildren && !attrs.length){
+    const typeInfo = inferXmlType(textContent);
+    return '<div class="tnode"><div class="trow" style="padding-left:'+(indent+8)+'px" data-key="'+esc(tag)+'">'
+      +'<span class="tsp"></span>'
+      +'<span class="tkey">'+esc(tag)+'</span><span class="tcol">:</span>'
+      +'<span class="tbadge '+typeInfo.badge+'">'+typeInfo.label+'</span>'
+      +'<span class="tval '+typeInfo.valCls+'">'+esc(textContent.slice(0,40))+(textContent.length>40?'\u2026':'')+'</span>'
+      +'</div></div>';
+  }
+
+  var childrenHtml = '';
+  for(var i=0; i<attrs.length; i++){
+    var a = attrs[i];
+    childrenHtml += '<div class="tnode"><div class="trow" style="padding-left:'+((depth+1)*16+8)+'px" data-key="'+esc(a.name)+'">'
+      +'<span class="tsp"></span>'
+      +'<span class="tkey">@'+esc(a.name)+'</span><span class="tcol">:</span>'
+      +'<span class="tbadge bx">attr</span>'
+      +'<span class="tval tv-s">"'+esc(a.value.slice(0,30))+'"</span>'
+      +'</div></div>';
+  }
+  for(var ci=0; ci<childElements.length; ci++){
+    childrenHtml += buildXmlNode(childElements[ci], depth+1);
+  }
+
+  var count = childElements.length + attrs.length;
+  return '<div class="tnode">'
+    +'<div class="trow" style="padding-left:'+(indent+8)+'px" data-key="'+esc(tag)+'">'
+    +'<span class="ttog" data-id="'+id+'"><i data-lucide="chevron-right"></i></span>'
+    +'<span class="tkey">'+esc(tag)+'</span><span class="tcol">:</span>'
+    +'<span class="tbadge bo">element</span>'
+    +'<span class="tcnt">{'+count+'}</span>'
+    +'</div>'
+    +'<div class="tchildren open" id="ch-'+id+'">'+childrenHtml+'</div>'
+    +'</div>';
+}
+
+function inferXmlType(text){
+  if(!text) return {badge:'bu',label:'empty',valCls:'tv-u'};
+  if(text==='true'||text==='false') return {badge:'bb',label:'boolean',valCls:'tv-b'};
+  if(/^-?\d+$/.test(text)) return {badge:'bn',label:'integer',valCls:'tv-n'};
+  if(/^-?\d+\.\d+$/.test(text)) return {badge:'bn',label:'number',valCls:'tv-n'};
+  if(/^\d{4}-\d{2}-\d{2}$/.test(text)) return {badge:'bs',label:'date',valCls:'tv-s'};
+  return {badge:'bs',label:'string',valCls:'tv-s'};
+}
+
+/* ══════════════════════════════════════════════
+   XML → ABAP TYPES
+══════════════════════════════════════════════ */
+function doConvertXml(){
+  const val = editor ? editor.getValue() : '';
+  if(!val.trim()){ resetOutputXml(); return; }
+  const result = parseXML(val);
+  if(!result.doc){ resetOutputXml(); return; }
+
+  const root    = document.getElementById('cf-root').value.trim().toUpperCase();
+  const pS      = document.getElementById('cf-str').value||'TS_';
+  const pT      = document.getElementById('cf-tab').value||'TT_';
+  const snake   = document.getElementById('cf-snake').checked;
+  const flatAttr= document.getElementById('cf-attrflat').checked;
+
+  typeDefs=[]; mapLines=[]; definedStructures={}; _nid=0;
+  const t0 = performance.now();
+  document.getElementById('cbtn').classList.add('loading');
+
+  try{
+    const rootEl = result.doc.documentElement;
+    const rootName = root || toV(rootEl.tagName, snake);
+    xmlParseElement(rootEl, rootName, pS, pT, snake, flatAttr, false);
+
+    // Types
+    const abap = '* \u2500\u2500 ABAP Type Definitions (from XML) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\n* Generated by ABAP JSON Architect\n\n'
+               + typeDefs.join('\n\n');
+    rawOut.types = abap;
+    document.getElementById('out-types').innerHTML = hlABAP(abap);
+    setLN('ln-types', abap);
+    document.getElementById('emp-types').style.display='none';
+    document.getElementById('wrp-types').style.display='flex';
+    document.getElementById('bdg-types').textContent = typeDefs.length||'';
+
+    // iXML Code
+    const ixmlCode = genIXMLCode(rootEl, rootName, pS, snake, flatAttr);
+    rawOut.ixml = ixmlCode;
+    document.getElementById('out-ixml').innerHTML = hlABAP(ixmlCode);
+    setLN('ln-ixml', ixmlCode);
+    document.getElementById('emp-ixml').style.display='none';
+    document.getElementById('wrp-ixml').style.display='flex';
+
+    // Simple Transformation
+    const stCode = genSTSource(rootEl, rootName, pS, snake);
+    rawOut.st = stCode;
+    document.getElementById('out-st').textContent = stCode;
+    setLN('ln-st', stCode);
+    document.getElementById('emp-st').style.display='none';
+    document.getElementById('wrp-st').style.display='flex';
+
+    // Template (XML variant)
+    genXmlTemplate();
+
+    const ms = (performance.now()-t0).toFixed(1);
+    document.getElementById('st-ms').textContent=ms+'ms';
+    document.getElementById('st-time').style.display='flex';
+  } finally {
+    document.getElementById('cbtn').classList.remove('loading');
+  }
+}
+
+function resetOutputXml(){
+  document.getElementById('emp-types').style.display='flex';
+  document.getElementById('wrp-types').style.display='none';
+  document.getElementById('bdg-types').textContent='';
+  document.getElementById('emp-ixml').style.display='flex';
+  document.getElementById('wrp-ixml').style.display='none';
+  document.getElementById('emp-st').style.display='flex';
+  document.getElementById('wrp-st').style.display='none';
+  document.getElementById('st-time').style.display='none';
+}
+
+function xmlParseElement(el, name, pS, pT, snake, flatAttr, isArrayItem){
+  const childElements = Array.from(el.children);
+  const attrs = Array.from(el.attributes);
+  const textOnly = childElements.length===0;
+
+  if(textOnly && attrs.length===0){
+    return inferAbapType((el.textContent||'').trim());
+  }
+
+  const lines=[], sig_parts=[];
+
+  if(attrs.length > 0){
+    if(flatAttr){
+      for(var ai=0; ai<attrs.length; ai++){
+        var ak2 = toV(attrs[ai].name, snake);
+        var ln2 = '    '+ak2.padEnd(25)+' TYPE string,  " @'+attrs[ai].name;
+        lines.push(ln2); sig_parts.push(ln2.trim());
+      }
+    } else {
+      // Nested: create a sub-structure for attributes
+      var attrLines = [];
+      for(var ai=0; ai<attrs.length; ai++){
+        var ak2 = toV(attrs[ai].name, snake);
+        attrLines.push('    '+ak2.padEnd(25)+' TYPE string,');
+      }
+      var attrStructName = pS + toV(name, snake) + '_ATTR';
+      typeDefs.push('TYPES:\n  BEGIN OF '+attrStructName+',\n'+attrLines.join('\n')+'\n  END OF '+attrStructName+'.');
+      var ln2 = '    ATTRIBUTES'.padEnd(29)+' TYPE '+attrStructName+',';
+      lines.push(ln2); sig_parts.push(ln2.trim());
+    }
+  }
+
+  const tagCounts = {};
+  for(var ci2=0; ci2<childElements.length; ci2++) tagCounts[childElements[ci2].tagName] = (tagCounts[childElements[ci2].tagName]||0)+1;
+  const seen = {};
+
+  for(var ci3=0; ci3<childElements.length; ci3++){
+    var ch = childElements[ci3];
+    if(seen[ch.tagName]) continue;
+    seen[ch.tagName] = true;
+    var ak3 = toV(ch.tagName, snake);
+    var isArray = tagCounts[ch.tagName] > 1;
+
+    if(isArray){
+      var sing = makeSing(ch.tagName);
+      var ct = xmlParseElement(ch, sing, pS, pT, snake, flatAttr, true);
+      var psBase = pS.replace(/_+$/,'');
+      if(ct.startsWith('TYPE ')&&ct.slice(5).startsWith(psBase)){
+        var sn2 = ct.slice(5).trim();
+        var cPS = sn2.indexOf(pS)!==-1?pS:psBase;
+        var cPT = cPS===pS?pT:pT.replace(/_+$/,'');
+        var ln3 = '    '+ak3.padEnd(25)+' TYPE '+sn2.replace(cPS,cPT)+',';
+        lines.push(ln3); sig_parts.push(ln3.trim());
+      } else {
+        var ln4 = '    '+ak3.padEnd(25)+' TYPE STANDARD TABLE OF '+ct.slice(5)+' WITH EMPTY KEY,';
+        lines.push(ln4); sig_parts.push(ln4.trim());
+      }
+    } else {
+      var ct2 = xmlParseElement(ch, ch.tagName, pS, pT, snake, flatAttr, false);
+      var ln5 = '    '+ak3.padEnd(25)+' '+ct2+',';
+      lines.push(ln5); sig_parts.push(ln5.trim());
+    }
+  }
+
+  var sig = sig_parts.join('');
+  var bn = toV(name, snake);
+  var curPS = bn?pS:pS.replace(/_+$/,'');
+  var curPT = bn?pT:pT.replace(/_+$/,'');
+  var sn3 = curPS+bn, fn=sn3, c2=2;
+  while(true){
+    if(definedStructures[fn]){
+      if(definedStructures[fn]===sig) return 'TYPE '+fn;
+      fn=sn3+'_V'+(c2++);
+    } else { definedStructures[fn]=sig; break; }
+  }
+  var ttn = fn.replace(curPS, curPT);
+  if(isArrayItem){
+    typeDefs.push('TYPES:\n  BEGIN OF '+fn+',\n'+lines.join('\n')+'\n  END OF '+fn+',\n  '+ttn+' TYPE STANDARD TABLE OF '+fn+' WITH EMPTY KEY.');
+  } else {
+    typeDefs.push('TYPES:\n  BEGIN OF '+fn+',\n'+lines.join('\n')+'\n  END OF '+fn+'.');
+  }
+  return 'TYPE '+fn;
+}
+
+function inferAbapType(text){
+  if(!text) return 'TYPE string';
+  if(text==='true'||text==='false') return 'TYPE abap_bool';
+  if(/^\d{4}-\d{2}-\d{2}$/.test(text)) return 'TYPE d';
+  if(/^\d{2}:\d{2}:\d{2}$/.test(text)) return 'TYPE t';
+  if(/^-?\d+$/.test(text)){
+    var n = parseInt(text,10);
+    return Math.abs(n)>2e9?'TYPE p LENGTH 16 DECIMALS 0':'TYPE i';
+  }
+  if(/^-?\d+\.\d+$/.test(text)) return 'TYPE p LENGTH 16 DECIMALS 3';
+  return 'TYPE string';
+}
+
+/* ══════════════════════════════════════════════
+   iXML CODE GENERATOR
+══════════════════════════════════════════════ */
+function genIXMLCode(rootEl, rootName, pS, snake, flatAttr){
+  var tr2 = lang==='tr';
+  var structName = pS + toV(rootName, snake);
+  var rootTag = rootEl.tagName;
+  var code = '* \u2500\u2500 iXML '+(tr2?'Ayr\u0131\u015ft\u0131rma Kodu':'Parsing Code')+' \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\n';
+  code += '* Generated by ABAP JSON Architect\n\n';
+  code += 'DATA: lo_ixml    TYPE REF TO if_ixml,\n';
+  code += '      lo_doc     TYPE REF TO if_ixml_document,\n';
+  code += '      lo_parser  TYPE REF TO if_ixml_parser,\n';
+  code += '      lo_sf      TYPE REF TO if_ixml_stream_factory,\n';
+  code += '      lo_stream  TYPE REF TO if_ixml_istream.\n\n';
+  code += 'lo_ixml   = cl_ixml=>create( ).\n';
+  code += 'lo_doc    = lo_ixml->create_document( ).\n';
+  code += 'lo_sf     = lo_ixml->create_stream_factory( ).\n';
+  code += 'lo_stream = lo_sf->create_istream_string( lv_xml_string ).\n';
+  code += 'lo_parser = lo_ixml->create_parser(\n';
+  code += '  stream_factory = lo_sf\n';
+  code += '  istream        = lo_stream\n';
+  code += '  document       = lo_doc ).\n';
+  code += 'lo_parser->parse( ).\n\n';
+  code += '* '+(tr2?'Root elemana git':'Navigate to root element')+'\n';
+  code += 'DATA(lo_root) = lo_doc->find_from_name( name = \''+rootTag+'\' ).\n';
+  code += 'DATA ls_data TYPE '+structName+'.\n\n';
+  code += genIXMLExtract(rootEl, 'lo_root', 'ls_data', snake, flatAttr, 0);
+  return code;
+}
+
+function genIXMLExtract(el, varName, structVar, snake, flatAttr, depth){
+  var childElements = Array.from(el.children);
+  var attrs = Array.from(el.attributes);
+  var indent = '';
+  for(var di=0;di<depth;di++) indent+='  ';
+  var code = '';
+
+  if(attrs.length > 0 && flatAttr){
+    for(var ai2=0;ai2<attrs.length;ai2++){
+      var field0 = toV(attrs[ai2].name, snake);
+      code += indent+structVar+'-'+field0+' = '+varName+'->get_attribute( name = \''+attrs[ai2].name+'\' ).\n';
+    }
+  } else if(attrs.length > 0){
+    for(var ai2=0;ai2<attrs.length;ai2++){
+      var field0 = toV(attrs[ai2].name, snake);
+      code += indent+structVar+'-ATTRIBUTES-'+field0+' = '+varName+'->get_attribute( name = \''+attrs[ai2].name+'\' ).\n';
+    }
+  }
+
+  var tagCounts2 = {};
+  for(var ci4=0;ci4<childElements.length;ci4++) tagCounts2[childElements[ci4].tagName] = (tagCounts2[childElements[ci4].tagName]||0)+1;
+  var seen2 = {};
+
+  for(var ci5=0;ci5<childElements.length;ci5++){
+    var ch2 = childElements[ci5];
+    if(seen2[ch2.tagName]) continue;
+    seen2[ch2.tagName] = true;
+    var field2 = toV(ch2.tagName, snake);
+    var isArr = tagCounts2[ch2.tagName] > 1;
+    var hasKids2 = ch2.children.length > 0 || ch2.attributes.length > 0;
+    var fLow = field2.toLowerCase();
+
+    if(isArr){
+      code += '\n'+indent+'* '+(lang==='tr'?'Dizi elemanlar\u0131n\u0131 oku':'Read array items')+': '+ch2.tagName+'\n';
+      code += indent+'DATA(lo_iter_'+fLow+') = '+varName+'->get_children( )->create_iterator( ).\n';
+      code += indent+'DATA(lo_node_'+fLow+') = lo_iter_'+fLow+'->get_next( ).\n';
+      code += indent+'WHILE lo_node_'+fLow+' IS NOT INITIAL.\n';
+      code += indent+'  IF lo_node_'+fLow+'->get_name( ) = \''+ch2.tagName+'\'.\n';
+      code += indent+'    DATA ls_'+fLow+' LIKE LINE OF '+structVar+'-'+field2+'.\n';
+      code += indent+'    CLEAR ls_'+fLow+'.\n';
+      if(hasKids2){
+        code += genIXMLExtract(ch2, 'lo_node_'+fLow, 'ls_'+fLow, snake, flatAttr, depth+2);
+      } else {
+        code += indent+'    ls_'+fLow+' = lo_node_'+fLow+'->get_value( ).\n';
+      }
+      code += indent+'    APPEND ls_'+fLow+' TO '+structVar+'-'+field2+'.\n';
+      code += indent+'  ENDIF.\n';
+      code += indent+'  lo_node_'+fLow+' = lo_iter_'+fLow+'->get_next( ).\n';
+      code += indent+'ENDWHILE.\n';
+    } else if(hasKids2){
+      code += '\n'+indent+'* '+(lang==='tr'?'\u0130\u00e7 yap\u0131y\u0131 oku':'Read nested structure')+': '+ch2.tagName+'\n';
+      code += indent+'DATA(lo_'+fLow+') = '+varName+'->find_from_name( name = \''+ch2.tagName+'\' ).\n';
+      code += indent+'IF lo_'+fLow+' IS NOT INITIAL.\n';
+      code += genIXMLExtract(ch2, 'lo_'+fLow, structVar+'-'+field2, snake, flatAttr, depth+1);
+      code += indent+'ENDIF.\n';
+    } else {
+      code += indent+'DATA(lo_'+fLow+') = '+varName+'->find_from_name( name = \''+ch2.tagName+'\' ).\n';
+      code += indent+'IF lo_'+fLow+' IS NOT INITIAL.\n';
+      code += indent+'  '+structVar+'-'+field2+' = lo_'+fLow+'->get_value( ).\n';
+      code += indent+'ENDIF.\n';
+    }
+  }
+  return code;
+}
+
+/* ══════════════════════════════════════════════
+   SIMPLE TRANSFORMATION GENERATOR
+══════════════════════════════════════════════ */
+function genSTSource(rootEl, rootName, pS, snake){
+  var st = '<?sap.transform simple?>\n';
+  st += '<tt:transform xmlns:tt="http://www.sap.com/transformation-templates">\n';
+  st += '  <tt:root name="ROOT"/>\n';
+  st += '  <tt:template>\n';
+  st += genSTElement(rootEl, 'ROOT', snake, 2);
+  st += '  </tt:template>\n';
+  st += '</tt:transform>';
+  return st;
+}
+
+function genSTElement(el, refPath, snake, depth){
+  var indent = '';
+  for(var di2=0;di2<depth;di2++) indent+='    ';
+  var childElements = Array.from(el.children);
+  var attrs = Array.from(el.attributes);
+  var st = indent+'<'+el.tagName+'>\n';
+
+  for(var ai3=0;ai3<attrs.length;ai3++){
+    var field3 = toV(attrs[ai3].name, snake);
+    st += indent+'  <tt:attribute name="'+attrs[ai3].name+'" value-ref="'+refPath+'.'+field3+'"/>\n';
+  }
+  if(attrs.length && childElements.length===0){
+    st += indent+'</'+el.tagName+'>\n';
+    return st;
+  }
+
+  var tagCounts3 = {};
+  for(var ci6=0;ci6<childElements.length;ci6++) tagCounts3[childElements[ci6].tagName] = (tagCounts3[childElements[ci6].tagName]||0)+1;
+  var seen3 = {};
+
+  for(var ci7=0;ci7<childElements.length;ci7++){
+    var ch3 = childElements[ci7];
+    if(seen3[ch3.tagName]) continue;
+    seen3[ch3.tagName] = true;
+    var field4 = toV(ch3.tagName, snake);
+    var isArr2 = tagCounts3[ch3.tagName] > 1;
+    var hasKids3 = ch3.children.length > 0 || ch3.attributes.length > 0;
+
+    if(isArr2){
+      st += indent+'  <tt:loop ref="'+refPath+'.'+field4+'">\n';
+      if(hasKids3){
+        st += genSTElement(ch3, '$ref', snake, depth+2);
+      } else {
+        st += indent+'    <'+ch3.tagName+'>\n';
+        st += indent+'      <tt:value ref="$ref"/>\n';
+        st += indent+'    </'+ch3.tagName+'>\n';
+      }
+      st += indent+'  </tt:loop>\n';
+    } else if(hasKids3){
+      st += genSTElement(ch3, refPath+'.'+field4, snake, depth+1);
+    } else {
+      st += indent+'  <'+ch3.tagName+'>\n';
+      st += indent+'    <tt:value ref="'+refPath+'.'+field4+'"/>\n';
+      st += indent+'  </'+ch3.tagName+'>\n';
+    }
+  }
+  st += indent+'</'+el.tagName+'>\n';
+  return st;
+}
+
+/* ══════════════════════════════════════════════
+   XML HTTP TEMPLATE
+══════════════════════════════════════════════ */
+function genXmlTemplate(){
+  var tr2 = lang==='tr';
+  var tpl = '* \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\n'
+  + '* MODERN ABAP WEB SERVICE \u2014 XML '+(tr2?'KOD \u015eABLONLARI':'CODE TEMPLATES')+'\n'
+  + '* \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\n\n'
+  + '*--- '+(tr2?'1. XML Yan\u0131t\u0131n\u0131 iXML ile Ayr\u0131\u015ft\u0131r':'1. Parse XML Response with iXML')+' ---\n'
+  + 'DATA: lo_ixml   TYPE REF TO if_ixml,\n'
+  + '      lo_doc    TYPE REF TO if_ixml_document,\n'
+  + '      lo_parser TYPE REF TO if_ixml_parser.\n\n'
+  + 'lo_ixml   = cl_ixml=>create( ).\n'
+  + 'lo_doc    = lo_ixml->create_document( ).\n'
+  + 'DATA(lo_sf) = lo_ixml->create_stream_factory( ).\n'
+  + 'DATA(lo_stream) = lo_sf->create_istream_string( lv_xml_response ).\n'
+  + 'lo_parser = lo_ixml->create_parser(\n'
+  + '  stream_factory = lo_sf\n'
+  + '  istream        = lo_stream\n'
+  + '  document       = lo_doc ).\n'
+  + 'lo_parser->parse( ).\n\n'
+  + '*--- '+(tr2?'2. Basit D\u00f6n\u00fc\u015f\u00fcm ile Ayr\u0131\u015ft\u0131r':'2. Parse with Simple Transformation')+' ---\n'
+  + 'CALL TRANSFORMATION z_my_transform\n'
+  + '  SOURCE XML lv_xml_response\n'
+  + '  RESULT root = ls_data.\n\n'
+  + '*--- '+(tr2?'3. ABAP Verisini XML\'e D\u00f6n\u00fc\u015ft\u00fcr':'3. Convert ABAP to XML')+' ---\n'
+  + 'CALL TRANSFORMATION z_my_transform\n'
+  + '  SOURCE root = ls_data\n'
+  + '  RESULT XML lv_xml_output.\n\n'
+  + '*--- '+(tr2?'4. HTTP \u0130stemci (SM59 Hedefi)':'4. HTTP Client (SM59 Destination)')+' ---\n'
+  + 'DATA: lo_client TYPE REF TO if_http_client.\n'
+  + 'cl_http_client=>create_by_destination(\n'
+  + '  EXPORTING destination = \'Z_MY_XML_API\'\n'
+  + '  IMPORTING client      = lo_client\n'
+  + '  EXCEPTIONS OTHERS     = 1\n'
+  + ').\n'
+  + 'IF sy-subrc <> 0. " '+(tr2?'Ba\u011flant\u0131 hatas\u0131':'Connection error')+' ENDIF.\n\n'
+  + '*--- '+(tr2?'5. POST \u0130ste\u011fi (XML, Bearer Token)':'5. POST Request (XML, Bearer Token)')+' ---\n'
+  + 'lo_client->request->set_method( if_http_request=>co_request_method_post ).\n'
+  + 'lo_client->request->set_content_type( \'text/xml; charset=utf-8\' ).\n'
+  + 'lo_client->request->set_header_field(\n'
+  + '  name  = \'Authorization\'\n'
+  + '  value = |Bearer { lv_token }|\n'
+  + ').\n'
+  + 'lo_client->request->set_cdata( lv_xml_request ).\n'
+  + 'lo_client->send( ).\n'
+  + 'lo_client->receive( ).\n\n'
+  + 'DATA(lv_response) = lo_client->response->get_cdata( ).\n'
+  + 'DATA(lv_code)     = lo_client->response->get_status_code( ).\n'
+  + 'lo_client->close( ).\n\n'
+  + 'IF lv_code <> 200.\n'
+  + '  " '+(tr2?'HTTP hatas\u0131n\u0131 i\u015fle':'Handle HTTP error')+'\n'
+  + 'ENDIF.';
+  rawOut.template = tpl;
+  document.getElementById('out-template').innerHTML = hlABAP(tpl);
+  setLN('ln-template', tpl);
+}
+
+/* ══════════════════════════════════════════════
+   XML VALIDATION
+══════════════════════════════════════════════ */
+function doValidateXml(){
+  var val = editor ? editor.getValue() : '';
+  if(!val.trim()) return;
+  var result = parseXML(val);
+  if(result.doc){
+    updateValidationXml(true, []);
+    toast(t('valOkXml'),'ok');
+  } else {
+    updateValidationXml(false, [result.error]);
+    toast(t('valErrXml'),'er');
+  }
+}
+
+function updateValidationXml(ok, errors){
+  var el = document.getElementById('val-content');
+  var bdg = document.getElementById('bdg-val');
+  if(ok){
+    el.textContent = '';
+    var vok = document.createElement('div');
+    vok.className = 'vok';
+    vok.textContent = t('vOkXml');
+    el.appendChild(vok);
+    bdg.style.display='none';
+  } else {
+    bdg.style.display='flex';
+    bdg.textContent = errors.length;
+    el.textContent = '';
+    var wrap = document.createElement('div');
+    wrap.className = 'verrors';
+    errors.forEach(function(e){
+      var item = document.createElement('div');
+      item.className = 'veitem';
+      var msg = document.createElement('div');
+      msg.className = 've-msg';
+      msg.textContent = String(e).replace(/This page contains the following errors:/, '').replace(/Below is a rendering of the page up to the first error./, '').trim();
+      item.appendChild(msg);
+      wrap.appendChild(item);
+    });
+    el.appendChild(wrap);
+  }
+  safeIcons();
+}
+
+/* ══════════════════════════════════════════════
+   MONACO INIT
+══════════════════════════════════════════════ */
+let editor = null;
+let _dbt;
+
+window.MonacoEnvironment = {
+  getWorkerUrl(_, label) {
+    const base = 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.44.0/min/';
+    const w = label==='json'
+      ? 'vs/language/json/jsonWorker.js'
+      : 'vs/base/worker/workerMain.js';
+    return `data:text/javascript;charset=utf-8,${encodeURIComponent(
+      `self.MonacoEnvironment={baseUrl:'${base}'};importScripts('${base}${w}');`
+    )}`;
+  }
+};
+
+require.config({ paths:{ vs:'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.44.0/min/vs' }});
+require(['vs/editor/editor.main'], function(){
+  const isDark = document.documentElement.dataset.theme==='dark';
+  editor = monaco.editor.create(document.getElementById('monaco-container'),{
+    value: SAMPLE,
+    language:'json',
+    theme: isDark?'vs-dark':'vs',
+    fontFamily:"'JetBrains Mono','Consolas',monospace",
+    fontSize:13, lineHeight:20,
+    minimap:{ enabled:false },
+    scrollBeyondLastLine:false,
+    renderLineHighlight:'line',
+    padding:{ top:10 },
+    automaticLayout:true,
+    wordWrap:'off',
+    formatOnType:true,
+  });
+
+  editor.onDidChangeModelContent(()=>{
+    clearTimeout(_dbt);
+    _dbt = setTimeout(onEditorChange, 320);
+  });
+
+  editor.onDidChangeCursorPosition(e=>{
+    const p = e.position;
+    document.getElementById('st-pos').textContent = `${p.lineNumber}:${p.column}`;
+    document.getElementById('st-cur').style.display='flex';
+  });
+
+  // Ctrl+Shift+F in Monaco → format
+  editor.addCommand(monaco.KeyMod.CtrlCmd|monaco.KeyMod.Shift|monaco.KeyCode.KeyF,fmtJSON);
+
+  onEditorChange();
+});
+
+function onEditorChange(){
+  const val = editor ? editor.getValue() : '';
+  const lines = val.split('\n').length;
+  document.getElementById('st-lc').textContent = lines+' '+t('sLines');
+  document.getElementById('st-lines').style.display = val?'flex':'none';
+
+  if(!val.trim()){
+    setStatus('idle',t('stEmpty'));
+    if(fmt==='xml') resetOutputXml(); else resetOutput();
+    return;
+  }
+
+  // Auto-detect format on paste (skip if user manually chose format)
+  if(!_manualFmt){
+    const detected = detectFormat(val);
+    if(detected !== fmt){
+      fmt = detected;
+      applyFormat(fmt);
+      switchTab('types'); // ensure visible tab when format changes
+    }
+  }
+
+  if(fmt==='xml'){
+    const result = parseXML(val);
+    if(!result.doc){
+      setStatus('error',t('stErrorXml'));
+      clearTree();
+      resetOutputXml();
+      updateValidationXml(false, [result.error]);
+      return;
+    }
+    setStatus('valid',t('stValidXml'));
+    try{ renderXmlTree(result.doc); } catch(er){ console.warn('XML tree render error:', er); }
+    doConvertXml();
+    updateValidationXml(true,[]);
+  } else {
+    let json;
+    try{ json = JSON.parse(val); } catch(e){
+      setStatus('error',t('stError'));
+      clearTree();
+      resetOutput();
+      setTimeout(()=>{
+        const markers = editor ? monaco.editor.getModelMarkers({}) : [];
+        updateValidation(false, markers.length ? markers : [e]);
+      },400);
+      return;
+    }
+    setStatus('valid',t('stValid'));
+    try{ renderTree(json); } catch(er){ console.warn('Tree render error:', er); }
+    doConvert();
+    updateValidation(true,[]);
+  }
+}
+
+/* ══════════════════════════════════════════════
+   STATUS BAR
+══════════════════════════════════════════════ */
+function setStatus(state,msg){
+  const b = document.getElementById('stbar');
+  b.className = 'stbar '+state;
+  document.getElementById('st-msg').textContent = msg;
+}
+
+/* ══════════════════════════════════════════════
+   VALIDATION PANEL
+══════════════════════════════════════════════ */
+function showValidation(){ switchTab('validate'); doValidate(); }
+function doValidate(){
+  if(fmt==='xml'){ doValidateXml(); return; }
+  const val = editor ? editor.getValue() : '';
+  if(!val.trim()){ return; }
+  try{
+    JSON.parse(val);
+    updateValidation(true,[]);
+    toast(t('valOk'),'ok');
+  } catch(e){
+    const markers = monaco.editor.getModelMarkers({});
+    updateValidation(false, markers.length ? markers : [e]);
+    toast(t('valErr'),'er');
+  }
+}
+
+function updateValidation(ok, errors){
+  const el = document.getElementById('val-content');
+  const bdg = document.getElementById('bdg-val');
+  if(ok){
+    el.innerHTML = `<div class="vok">
+      <i data-lucide="shield-check" style="width:20px;height:20px"></i>
+      <span>${t('vOk')}</span>
+    </div>`;
+    bdg.style.display='none';
+  } else {
+    const errs = Array.isArray(errors)?errors:[];
+    bdg.style.display='flex';
+    bdg.textContent = errs.length;
+    const items = errs.map(e=>{
+      const msg = e.message || String(e);
+      const line = e.startLineNumber || e.lineNumber || '';
+      const col  = e.startColumn  || e.column  || '';
+      const locStr = line ? `${t('vLine')} ${line}${col?', '+t('vCol')+' '+col:''}` : '';
+      return `<div class="veitem" onclick="jumpLine(${line})">
+        <div class="ve-msg">${esc(msg)}</div>
+        ${locStr ? `<div class="ve-loc">${locStr}</div>` : ''}
+      </div>`;
+    }).join('');
+    el.innerHTML = `<div class="verrors">${items}</div>`;
+  }
+  safeIcons();
+}
+
+function jumpLine(line){
+  if(!editor||!line) return;
+  editor.revealLineInCenter(line);
+  editor.setPosition({ lineNumber:line, column:1 });
+  editor.focus();
+}
+
+/* ══════════════════════════════════════════════
+   JSON TREE VIEW
+══════════════════════════════════════════════ */
+function clearTree(){
+  const r = document.getElementById('tree-root');
+  const tKey = fmt==='xml' ? 'treeEmptyXml' : 'treeEmpty';
+  const hKey = fmt==='xml' ? 'treeEmptyHintXml' : 'treeEmptyHint';
+  r.textContent = '';
+  const wrap = document.createElement('div');
+  wrap.className = 'empty';
+  wrap.id = 'tree-empty';
+  const ico = document.createElement('div');
+  ico.className = 'empty-ico';
+  ico.innerHTML = '<i data-lucide="git-branch-plus"></i>';
+  const title = document.createElement('span');
+  title.className = 'empty-t';
+  title.textContent = t(tKey);
+  const hint = document.createElement('span');
+  hint.className = 'empty-s';
+  hint.textContent = t(hKey);
+  wrap.appendChild(ico);
+  wrap.appendChild(title);
+  wrap.appendChild(hint);
+  r.appendChild(wrap);
+  safeIcons();
+}
+
+function renderTree(json){
+  const r = document.getElementById('tree-root');
+  r.innerHTML = buildNode(json, null, 0);
+  // Attach toggle events
+  r.querySelectorAll('.ttog').forEach(btn=>{
+    btn.addEventListener('click', e=>{
+      e.stopPropagation();
+      const id = btn.dataset.id;
+      const ch = document.getElementById('ch-'+id);
+      const open = ch.classList.toggle('open');
+      btn.classList.toggle('exp', open);
+    });
+  });
+  r.querySelectorAll('.trow').forEach(row=>{
+    row.addEventListener('click', ()=>{
+      const key = row.dataset.key;
+      if(key && editor){
+        const matches = editor.getModel().findMatches(`"${key}"`,false,false,true,null,true);
+        if(matches.length){
+          editor.revealLineInCenter(matches[0].range.startLineNumber);
+          editor.setPosition({lineNumber:matches[0].range.startLineNumber,column:1});
+          editor.focus();
+        }
+      }
+      r.querySelectorAll('.trow.sel').forEach(x=>x.classList.remove('sel'));
+      row.classList.add('sel');
+    });
+  });
+  safeIcons();
+}
+
+let _nid = 0;
+function buildNode(val, key, depth){
+  const id = _nid++;
+  const indent = depth*16;
+
+  if(val === null){
+    return `<div class="tnode"><div class="trow" style="padding-left:${indent+8}px" data-key="${key||''}">
+      <span class="tsp"></span>
+      ${key!==null ? `<span class="tkey">${esc(String(key))}</span><span class="tcol">:</span>` : ''}
+      <span class="tbadge bu">null</span>
+      <span class="tval tv-u">null</span>
+    </div></div>`;
+  }
+  const kind = typeof val;
+  if(kind==='string'||kind==='number'||kind==='boolean'){
+    const badgeCls = kind==='string'?'bs':kind==='number'?'bn':'bb';
+    const valCls   = kind==='string'?'tv-s':kind==='number'?'tv-n':'tv-b';
+    const disp = kind==='string' ? `"${esc(String(val).slice(0,40))}${val.length>40?'…':''}"` : String(val);
+    return `<div class="tnode"><div class="trow" style="padding-left:${indent+8}px" data-key="${key||''}">
+      <span class="tsp"></span>
+      ${key!==null ? `<span class="tkey">${esc(String(key))}</span><span class="tcol">:</span>` : ''}
+      <span class="tbadge ${badgeCls}">${kind}</span>
+      <span class="tval ${valCls}">${disp}</span>
+    </div></div>`;
+  }
+  if(Array.isArray(val)){
+    const count = val.length;
+    const children = val.slice(0,30).map((v,i)=>buildNode(v,i,depth+1)).join('');
+    const more = count>30 ? `<div style="padding:3px 8px 3px ${indent+40}px;font-size:10.5px;color:var(--tx3)">… +${count-30} ${lang==='tr'?'daha':'more'}</div>` : '';
+    return `<div class="tnode">
+      <div class="trow" style="padding-left:${indent+8}px" data-key="${key||''}">
+        <span class="ttog" data-id="${id}"><i data-lucide="chevron-right"></i></span>
+        ${key!==null?`<span class="tkey">${esc(String(key))}</span><span class="tcol">:</span>`:''}
+        <span class="tbadge ba">array</span>
+        <span class="tcnt">[${count}]</span>
+      </div>
+      <div class="tchildren open" id="ch-${id}">${children}${more}</div>
+    </div>`;
+  }
+  if(kind==='object'){
+    const keys = Object.keys(val);
+    const children = keys.slice(0,40).map(k=>buildNode(val[k],k,depth+1)).join('');
+    const more = keys.length>40 ? `<div style="padding:3px 8px 3px ${indent+40}px;font-size:10.5px;color:var(--tx3)">… +${keys.length-40} ${lang==='tr'?'alan':'fields'}</div>` : '';
+    return `<div class="tnode">
+      <div class="trow" style="padding-left:${indent+8}px" data-key="${key||''}">
+        <span class="ttog" data-id="${id}"><i data-lucide="chevron-right"></i></span>
+        ${key!==null?`<span class="tkey">${esc(String(key))}</span><span class="tcol">:</span>`:''}
+        <span class="tbadge bo">object</span>
+        <span class="tcnt">{${keys.length}}</span>
+      </div>
+      <div class="tchildren open" id="ch-${id}">${children}${more}</div>
+    </div>`;
+  }
+  return '';
+}
+
+function treeExpandAll(exp){
+  document.querySelectorAll('.tchildren').forEach(c=>c.classList.toggle('open',exp));
+  document.querySelectorAll('.ttog').forEach(t=>t.classList.toggle('exp',exp));
+}
+
+/* ══════════════════════════════════════════════
+   ABAP GENERATOR
+══════════════════════════════════════════════ */
+let rawOut = { types:'', mapping:'', template:'', ixml:'', st:'' };
+let typeDefs=[], mapLines=[], definedStructures={};
+
+function schedConvert(){ clearTimeout(_dbt); _dbt=setTimeout(function(){ fmt==='xml'?doConvertXml():doConvert(); },300); }
+
+function doConvert(){
+  const val = editor ? editor.getValue() : '';
+  if(!val.trim()){ resetOutput(); return; }
+  let json;
+  try{ json=JSON.parse(val); } catch(e){ resetOutput(); return; }
+
+  const root  = document.getElementById('cf-root').value.trim().toUpperCase();
+  const pS    = document.getElementById('cf-str').value||'TS_';
+  const pT    = document.getElementById('cf-tab').value||'TT_';
+  const sfx   = document.getElementById('cf-sfx').value||'';
+  const sfxT  = document.getElementById('cf-sfxt').value;
+  const snake = document.getElementById('cf-snake').checked;
+
+  typeDefs=[]; mapLines=[]; definedStructures={}; _nid=0;
+  const t0 = performance.now();
+  document.getElementById('cbtn').classList.add('loading');
+
+  try{
+    parseNode(json, root, pS, pT, snake, sfx, sfxT);
+
+    // ── Types ──
+    const abap = `* ── ABAP Type Definitions ────────────────────────────────────────────────────\n* Generated by ABAP JSON Architect\n\n`
+               + typeDefs.join('\n\n');
+    rawOut.types = abap;
+    document.getElementById('out-types').innerHTML = hlABAP(abap);
+    setLN('ln-types', abap);
+    document.getElementById('emp-types').style.display='none';
+    document.getElementById('wrp-types').style.display='flex';
+    document.getElementById('bdg-types').textContent = typeDefs.length||'';
+
+    // ── Mapping ──
+    const uniq = [...new Set(mapLines)];
+    const mapCode = `DATA: lt_map TYPE /ui2/cl_json=>name_mappings.\n\n`
+                  + (uniq.length
+                      ? `lt_map = VALUE #(\n${uniq.join('\n')}\n).`
+                      : `* ${lang==='tr'?'Alan eşleştirmesi gerekmiyor.':'No name mapping needed.'}`);
+    rawOut.mapping = mapCode;
+    document.getElementById('out-mapping').innerHTML = hlABAP(mapCode);
+    setLN('ln-mapping', mapCode);
+    if(uniq.length){
+      document.getElementById('emp-mapping').style.display='none';
+      document.getElementById('wrp-mapping').style.display='flex';
+    } else {
+      document.getElementById('emp-mapping').style.display='flex';
+      document.getElementById('wrp-mapping').style.display='none';
+    }
+    document.getElementById('bdg-mapping').textContent = uniq.length||'';
+
+    // ── Template ──
+    genTemplate();
+
+    const ms = (performance.now()-t0).toFixed(1);
+    document.getElementById('st-ms').textContent=ms+'ms';
+    document.getElementById('st-time').style.display='flex';
+  } finally {
+    document.getElementById('cbtn').classList.remove('loading');
+  }
+}
+
+function resetOutput(){
+  ['types','mapping'].forEach(k=>{
+    document.getElementById('emp-'+k).style.display='flex';
+    document.getElementById('wrp-'+k).style.display='none';
+    document.getElementById('bdg-'+k).textContent='';
+  });
+  document.getElementById('st-time').style.display='none';
+}
+
+/* ── Core Parser ──
+   isArrayItem: true → bu struct bir dizinin elemanı → TT_ table type da üretilir
+                false → sıradan nested object  → sadece TS_ struct üretilir       */
+function parseNode(node, name, pS, pT, snake, sfx, sfxT, isArrayItem){
+  if(isArrayItem === undefined) isArrayItem = false;
+  if(node===null) return 'TYPE string';
+  const kind = typeof node;
+  if(kind==='string'){
+    if(/^\d{4}-\d{2}-\d{2}$/.test(node)) return 'TYPE d';
+    if(/^\d{2}:\d{2}:\d{2}$/.test(node)) return 'TYPE t';
+    return 'TYPE string';
+  }
+  if(kind==='number') return Number.isInteger(node)?(Math.abs(node)>2e9?'TYPE p LENGTH 16 DECIMALS 0':'TYPE i'):'TYPE p LENGTH 16 DECIMALS 3';
+  if(kind==='boolean') return 'TYPE abap_bool';
+
+  if(Array.isArray(node)){
+    if(!node.length) return 'TYPE STANDARD TABLE OF string WITH EMPTY KEY';
+    const sing = makeSing(name||'ITEM');
+    // Dizi elemanı olduğu için isArrayItem=true geçiyoruz
+    const et = parseNode(node[0], sing, pS, pT, snake, sfx, sfxT, true);
+    const psBase = pS.replace(/_+$/,'');
+    if(et.startsWith('TYPE ')&&et.slice(5).startsWith(psBase)){
+      const sn = et.slice(5).trim();
+      const cPS = sn.indexOf(pS)!==-1?pS:psBase;
+      const cPT = cPS===pS?pT:pT.replace(/_+$/,'');
+      return 'TYPE '+sn.replace(cPS,cPT);
+    }
+    return `TYPE STANDARD TABLE OF ${et.slice(5)} WITH EMPTY KEY`;
+  }
+
+  if(kind==='object'){
+    const lines=[], sig_parts=[];
+    for(const k in node){
+      let ak=toV(k,snake), jk=k;
+      if(sfx){
+        const su=sfx.toUpperCase();
+        if(sfxT==='abap'&&!ak.endsWith(su)) ak+=su;
+        else if(sfxT==='json') jk=k+sfx;
+      }
+      if(ak!==k||jk!==k) mapLines.push(`    ( abap = '${ak}' json = '${jk}' )`);
+      const ct=parseNode(node[k],k,pS,pT,snake,sfx,sfxT); // nested → isArrayItem=false (default)
+      const ln=`    ${ak.padEnd(25)} ${ct},`;
+      lines.push(ln); sig_parts.push(ln.trim());
+    }
+    const sig=sig_parts.join('');
+    let bn=toV(name,snake);
+    let curPS=bn?pS:pS.replace(/_+$/,'');
+    let curPT=bn?pT:pT.replace(/_+$/,'');
+    let sn=curPS+bn, fn=sn, c=2;
+    while(true){
+      if(definedStructures[fn]){
+        if(definedStructures[fn]===sig) return 'TYPE '+fn;
+        fn=sn+'_V'+(c++);
+      } else { definedStructures[fn]=sig; break; }
+    }
+    const ttn=fn.replace(curPS,curPT);
+    if(isArrayItem){
+      // JSON'da dizi [ ] olan alanlar → hem TS_ struct hem TT_ table type üretilir
+      typeDefs.push([
+        `TYPES:`,
+        `  BEGIN OF ${fn},`,
+        ...lines,
+        `  END OF ${fn},`,
+        `  ${ttn} TYPE STANDARD TABLE OF ${fn} WITH EMPTY KEY.`
+      ].join('\n'));
+    } else {
+      // Sıradan nesne → sadece TS_ struct üretilir, TT_ üretilmez
+      typeDefs.push([
+        `TYPES:`,
+        `  BEGIN OF ${fn},`,
+        ...lines,
+        `  END OF ${fn}.`
+      ].join('\n'));
+    }
+    return 'TYPE '+fn;
+  }
+  return 'TYPE string';
+}
+
+function toV(s,snake){
+  if(!s) return '';
+  let r=s;
+  if(snake){ r=r.replace(/([a-z0-9])([A-Z])/g,'$1_$2').replace(/([A-Z])([A-Z][a-z])/g,'$1_$2'); }
+  r=r.replace(/[^a-zA-Z0-9_]/g,'_');
+  if(/^\d/.test(r)) r='F_'+r;
+  return r.toUpperCase().replace(/_+/g,'_').replace(/^_/,'').replace(/_$/,'');
+}
+function makeSing(s){
+  s=s.toUpperCase();
+  if(s.endsWith('IES')) return s.slice(0,-3)+'Y';
+  if(s.endsWith('S')&&!s.endsWith('SS')) return s.slice(0,-1);
+  return s;
+}
+
+/* ── ABAP Syntax Highlighter ── */
+function hlABAP(code){
+  if(!code) return '';
+  let h = code.replace(/&/g,'&amp;').replace(/</g,'&lt;');
+  h = h.replace(/^(\*.*)$/gm,'<span class="acom">$1</span>');
+  h = h.replace(/'([^']*)'/g,"<span class='as2'>'$1'</span>");
+  h = h.replace(/\b(\d+(?:\.\d+)?)\b/g,'<span class="an2">$1</span>');
+  // Type names (ALL_CAPS with underscore)
+  h = h.replace(/\b([A-Z][A-Z0-9]*_[A-Z0-9_]+)\b/g,'<span class="atp">$1</span>');
+  // Keywords (must come after type names to avoid double-wrapping)
+  const KWS=['TYPES','BEGIN OF','END OF','DATA','TYPE','STANDARD TABLE OF',
+             'VALUE','EXPORTING','IMPORTING','CHANGING','WITH EMPTY KEY','REF TO',
+             'LENGTH','DECIMALS','abap_bool'];
+  const rx=new RegExp('\\b('+KWS.map(k=>k.replace(/ /g,'\\s+')).join('|')+')\\b','g');
+  h=h.replace(rx,'<span class="ak">$1</span>');
+  return h;
+}
+
+/* ── Template ── */
+function genTemplate(){
+  const tr = lang==='tr';
+  const tpl = `* ══════════════════════════════════════════════════════════════════════
+* MODERN ABAP WEB SERVICE — ${tr?'KOD ŞABLONLARı':'CODE TEMPLATES'}
+* ══════════════════════════════════════════════════════════════════════
+
+*─── ${tr?'1. JSON\'ı ABAP\'a Dönüştür (Deserialize)':'1. Convert JSON to ABAP (Deserialize)'} ────────────────
+/ui2/cl_json=>deserialize(
+  EXPORTING
+    json             = lv_json_input
+    pretty_name      = /ui2/cl_json=>pretty_mode-camel_case
+    conversion_exits = abap_true
+  CHANGING
+    data             = ls_target
+).
+
+*─── ${tr?'2. ABAP\'ı JSON\'a Dönüştür (Serialize)':'2. Convert ABAP to JSON (Serialize)'} ────────────────
+DATA(lv_json) = /ui2/cl_json=>serialize(
+  EXPORTING
+    data           = ls_abap_data
+    pretty_name    = /ui2/cl_json=>pretty_mode-camel_case
+    compress       = abap_true
+    numc_as_string = abap_true
+).
+
+*─── ${tr?'3. Özel Alan Eşleştirme ile Serialize':'3. Serialize with Custom Name Mapping'} ─────
+DATA(lt_map) = VALUE /ui2/cl_json=>name_mappings(
+  ( abap = 'MATNR' json = 'productId' )
+  ( abap = 'WERKS' json = 'plantId'   )
+).
+DATA(lv_json_mapped) = /ui2/cl_json=>serialize(
+  EXPORTING
+    data          = ls_data
+    name_mappings = lt_map
+).
+
+*─── ${tr?'4. HTTP İstemci (SM59 Hedefi)':'4. HTTP Client (SM59 Destination)'} ──────────────────────────
+DATA: lo_client TYPE REF TO if_http_client.
+cl_http_client=>create_by_destination(
+  EXPORTING destination = 'Z_MY_API'
+  IMPORTING client      = lo_client
+  EXCEPTIONS OTHERS     = 1
+).
+IF sy-subrc <> 0. " ${tr?'Bağlantı hatası':'Connection error'} ENDIF.
+
+*─── ${tr?'5. POST İsteği (Bearer Token)':'5. POST Request (Bearer Token)'} ───────────────────────────
+lo_client->request->set_method( if_http_request=>co_request_method_post ).
+lo_client->request->set_content_type( 'application/json; charset=utf-8' ).
+lo_client->request->set_header_field(
+  name  = 'Authorization'
+  value = |Bearer { lv_token }|
+).
+lo_client->request->set_cdata( lv_json ).
+lo_client->send( ).
+lo_client->receive( ).
+
+DATA(lv_response) = lo_client->response->get_cdata( ).
+DATA(lv_code)     = lo_client->response->get_status_code( ).
+lo_client->close( ).
+
+IF lv_code <> 200.
+  " ${tr?'HTTP hatasını işle':'Handle HTTP error'}
+ENDIF.`;
+  rawOut.template = tpl;
+  document.getElementById('out-template').innerHTML = hlABAP(tpl);
+  setLN('ln-template', tpl);
+}
+
+/* ══════════════════════════════════════════════
+   UTILITIES
+══════════════════════════════════════════════ */
+function setLN(id, text){
+  const el=document.getElementById(id);
+  if(!el||!text) return;
+  const n=text.split('\n').length;
+  el.textContent=Array.from({length:n},(_,i)=>i+1).join('\n')+'\n';
+}
+const esc = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+
+/* ══════════════════════════════════════════════
+   INLINE ICON ENGINE — CDN bağımlılığı yok
+══════════════════════════════════════════════ */
+const ICONS = {
+  'align-left':      '<line x1="21" y1="6" x2="3" y2="6"/><line x1="15" y1="12" x2="3" y2="12"/><line x1="17" y1="18" x2="3" y2="18"/>',
+  'shield-check':    '<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/>',
+  'shield':          '<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>',
+  'zap':             '<polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>',
+  'sun-moon':        '<path d="M12 8a2.83 2.83 0 0 0 4 4 4 4 0 1 1-4-4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.9 4.9 1.4 1.4"/><path d="m17.7 17.7 1.4 1.4"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.3 17.7-1.4 1.4"/><path d="m19.1 4.9-1.4 1.4"/>',
+  'keyboard':        '<rect width="20" height="16" x="2" y="4" rx="2"/><path d="M6 8h.01M10 8h.01M14 8h.01M18 8h.01M8 12h.01M12 12h.01M16 12h.01M7 16h10"/>',
+  'loader-2':        '<path d="M21 12a9 9 0 1 1-6.219-8.56"/>',
+  'play':            '<polygon points="5 3 19 12 5 21 5 3"/>',
+  'code-2':          '<path d="m18 16 4-4-4-4"/><path d="m6 8-4 4 4 4"/><path d="m14.5 4-5 16"/>',
+  'arrow-left-right':'<path d="M8 3 4 7l4 4"/><path d="M4 7h16"/><path d="m16 21 4-4-4-4"/><path d="M20 17H4"/>',
+  'file-code-2':     '<path d="M4 22h14a2 2 0 0 0 2-2V7l-5-5H6a2 2 0 0 0-2 2v4"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="m5 12-3 3 3 3"/><path d="m11 18 3-3-3-3"/>',
+  'download':        '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>',
+  'copy':            '<rect width="14" height="14" x="8" y="8" rx="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/>',
+  'git-branch-plus': '<line x1="6" y1="3" x2="6" y2="15"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M18 9a9 9 0 0 1-9 9"/><line x1="15" y1="6" x2="21" y2="6"/>',
+  'file-text':       '<path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><line x1="10" y1="9" x2="8" y2="9"/>',
+  'text-cursor':     '<path d="M17 22h-1a4 4 0 0 1-4-4V6a4 4 0 0 1 4-4h1"/><path d="M7 22h1a4 4 0 0 0 4-4v-1"/><path d="M7 2h1a4 4 0 0 1 4 4v1"/>',
+  'x':               '<line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>',
+  'chevron-right':   '<polyline points="9 18 15 12 9 6"/>',
+  'unfold-vertical': '<path d="M12 22V2"/><path d="m8 18 4 4 4-4"/><path d="m8 6 4-4 4 4"/>',
+  'fold-vertical':   '<path d="M12 22V2"/><path d="m8 10 4-4 4 4"/><path d="m8 14 4 4 4-4"/>',
+  'flask-conical':   '<path d="M10 2v7.527a2 2 0 0 1-.211.896L4.72 20.55a1 1 0 0 0 .9 1.45h12.76a1 1 0 0 0 .9-1.45l-5.069-10.127A2 2 0 0 1 14 9.527V2"/><path d="M8.5 2h7"/><path d="M7 16h10"/>',
+  'linkedin':        '<path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"/><rect x="2" y="9" width="4" height="12"/><circle cx="4" cy="4" r="2"/>',
+};
+
+function safeIcons(root){
+  const scope = root || document;
+  scope.querySelectorAll('i[data-lucide]').forEach(el=>{
+    const name = el.getAttribute('data-lucide');
+    const inner = ICONS[name] || '';
+    const svg = document.createElementNS('http://www.w3.org/2000/svg','svg');
+    svg.setAttribute('viewBox','0 0 24 24');
+    svg.setAttribute('fill','none');
+    svg.setAttribute('stroke','currentColor');
+    svg.setAttribute('stroke-width','2');
+    svg.setAttribute('stroke-linecap','round');
+    svg.setAttribute('stroke-linejoin','round');
+    if(el.className) svg.setAttribute('class', el.className);
+    const st = el.getAttribute('style'); if(st) svg.setAttribute('style', st);
+    svg.innerHTML = inner;
+    el.parentNode.replaceChild(svg, el);
+  });
+}
+
+/* ── Tabs ── */
+function switchTab(id){
+  document.querySelectorAll('.otab').forEach(b=>b.classList.toggle('on',b.dataset.tab===id));
+  document.querySelectorAll('.opane').forEach(p=>p.classList.toggle('on',p.id==='pane-'+id));
+}
+
+/* ── Format Input ── */
+function fmtInput(){
+  if(!editor) return;
+  if(fmt==='xml'){
+    try{
+      const result = parseXML(editor.getValue());
+      if(!result.doc) throw new Error('Invalid XML');
+      const s = new XMLSerializer();
+      const raw = s.serializeToString(result.doc);
+      // Simple indent formatting
+      let formatted = '', indent2 = 0;
+      raw.replace(/>\s*</g, '>\n<').split('\n').forEach(function(line){
+        if(line.match(/^<\//)){ indent2 = Math.max(indent2-1,0); }
+        formatted += '  '.repeat(indent2) + line.trim() + '\n';
+        if(line.match(/^<[^\/!?]/) && !line.match(/\/>/) && !line.match(/<.*<\//)) indent2++;
+      });
+      editor.setValue(formatted.trim());
+      toast(t('fmtOkXml'),'ok');
+    } catch(e){ toast(t('fmtErrXml'),'er'); }
+  } else {
+    try{
+      const v=JSON.stringify(JSON.parse(editor.getValue()),null,2);
+      editor.setValue(v);
+      toast(t('fmtOk'),'ok');
+    } catch(e){ toast(t('fmtErr'),'er'); }
+  }
+}
+// Keep fmtJSON as alias for keyboard shortcut
+function fmtJSON(){ fmtInput(); }
+
+/* ── Load Sample ── */
+function loadSample(){
+  if(editor){
+    if(fmt==='xml'){
+      editor.setValue(SAMPLE_XML);
+    } else {
+      editor.setValue(SAMPLE);
+    }
+    onEditorChange();
+  }
+}
+
+/* ── Suffix state ── */
+function updSfx(){
+  const v=document.getElementById('cf-sfx').value.trim();
+  document.getElementById('cf-sfxt').disabled=!v;
+}
+
+/* ── Copy / Download ── */
+function cpOut(key){
+  const tx=rawOut[key]; if(!tx) return;
+  navigator.clipboard.writeText(tx).then(()=>{
+    toast(t('cp'+key.charAt(0).toUpperCase()+key.slice(1)),'ok');
+    const b=document.getElementById('cp-'+key);
+    if(b){ b.classList.add('copied'); setTimeout(()=>b.classList.remove('copied'),1600); }
+  });
+}
+function dlOut(key){
+  const tx=rawOut[key]; if(!tx) return;
+  const a=Object.assign(document.createElement('a'),{
+    href:URL.createObjectURL(new Blob([tx],{type:'text/plain'})),
+    download:`abap_${key}_${Date.now()}.abap`
+  });
+  a.click(); URL.revokeObjectURL(a.href);
+  toast(t('dlOk'),'in');
+}
+
+/* ── Toast ── */
+let _tTimer;
+function toast(msg,type='in'){
+  const el=document.getElementById('toast');
+  const ic=document.getElementById('ti');
+  document.getElementById('tm').textContent=msg;
+  el.className=type;
+  ic.innerHTML = type==='ok'
+    ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:15px;height:15px"><polyline points="20 6 9 17 4 12"/></svg>'
+    : type==='er'
+    ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:15px;height:15px"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>'
+    : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:15px;height:15px"><circle cx="12" cy="12" r="10"/><polyline points="12 8 12 12 14 14"/></svg>';
+  el.classList.add('show');
+  clearTimeout(_tTimer);
+  _tTimer=setTimeout(()=>el.classList.remove('show'),2400);
+}
+
+/* ── Modal ── */
+function openModal(){ document.getElementById('modal').classList.add('open'); }
+function closeModal(){ document.getElementById('modal').classList.remove('open'); }
+function maybeClose(e){ if(e.target.id==='modal') closeModal(); }
+
+/* ── Resize Panels ── */
+(function(){
+  /* invert=true → sağ paneller gibi: sağa sürükle = küçül */
+  function makeResizer(divId, panelId, invert){
+    const dv=document.getElementById(divId);
+    const lp=document.getElementById(panelId);
+    let drag=false,sx,lw;
+    dv.addEventListener('mousedown',e=>{
+      drag=true; sx=e.clientX;
+      lw=lp.getBoundingClientRect().width;
+      dv.classList.add('drg');
+      document.body.style.cursor='col-resize';
+      document.body.style.userSelect='none';
+    });
+    document.addEventListener('mousemove',e=>{
+      if(!drag) return;
+      const ws=document.querySelector('.ws').getBoundingClientRect().width;
+      const delta = e.clientX - sx;
+      const nw=Math.max(150,Math.min(ws-300, invert ? lw-delta : lw+delta));
+      lp.style.width=nw+'px';
+      lp.style.flex='none';
+      if(editor) editor.layout();
+    });
+    document.addEventListener('mouseup',()=>{
+      if(!drag) return; drag=false;
+      dv.classList.remove('drg');
+      document.body.style.cursor='';
+      document.body.style.userSelect='';
+    });
+  }
+  makeResizer('dv1','pl', false);  /* dv1 sol panelin sağında → sağa sürükle = büyü */
+  makeResizer('dv2','pr', true);   /* dv2 sağ panelin solunda → sağa sürükle = küçül */
+})();
+
+/* ── Keyboard ── */
+document.addEventListener('keydown',e=>{
+  const ctrl=e.ctrlKey||e.metaKey;
+  if(ctrl&&e.key==='Enter'){e.preventDefault();fmt==='xml'?doConvertXml():doConvert();}
+  if(ctrl&&e.shiftKey&&e.key==='V'){e.preventDefault();showValidation();}
+  if(ctrl&&e.shiftKey&&e.key==='C'){
+    e.preventDefault();
+    const at=document.querySelector('.otab.on');
+    if(at) cpOut(at.dataset.tab);
+  }
+  if(ctrl&&e.shiftKey&&e.key==='T'){e.preventDefault();toggleTheme();}
+  if(e.key==='?'&&!e.target.matches('input,textarea,select')) openModal();
+  if(e.key==='Escape'){closeModal();}
+});
+
+window.addEventListener('resize',()=>{ if(editor) editor.layout(); });
+
+/* ── INIT ── */
+(function(){
+  document.body.className = 'fmt-json';
+  applyLang(); updateTips(); updSfx(); genTemplate();
+  safeIcons();
+})();
+</script>
+</body>
+</html>

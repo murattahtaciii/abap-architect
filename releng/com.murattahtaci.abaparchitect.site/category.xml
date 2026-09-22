@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<site>
+   <feature id="com.murattahtaci.abaparchitect.feature" version="0.0.0">
+      <category name="abaparchitect"/>
+   </feature>
+
+   <category-def name="abaparchitect" label="ABAP Architect">
+      <description>JSON/XML verisinden ABAP tip ve kod uretimi.</description>
+   </category-def>
+</site>
