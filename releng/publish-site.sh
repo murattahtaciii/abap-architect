@@ -37,7 +37,7 @@ trap cleanup EXIT
 echo "==> gh-pages worktree hazirlaniyor..."
 if git ls-remote --exit-code --heads origin gh-pages >/dev/null 2>&1; then
   git worktree add "$WORK" gh-pages
-  git -C "$WORK" pull --ff-only
+  git -C "$WORK" pull --ff-only origin gh-pages
 else
   git worktree add "$WORK" --detach
   git -C "$WORK" checkout --orphan gh-pages
