@@ -1,5 +1,7 @@
 # ABAP Architect
 
+<p align="center"><img src="docs/images/logo.png" alt="ABAP Architect" width="220"/></p>
+
 [English](#english) | [Türkçe](#türkçe)
 
 Eclipse plug-in that generates ABAP type definitions from JSON/XML data and creates real
