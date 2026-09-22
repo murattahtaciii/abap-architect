@@ -11,7 +11,7 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-SITE="$ROOT/releng/com.murattahtaci.abaparchitect.site/target/repository"
+SITE="$ROOT/releng/io.github.murattahtaciii.abaparchitect.site/target/repository"
 
 cd "$ROOT"
 

@@ -71,7 +71,7 @@ while IFS=, read -r id version location rest; do
   fi
 done < "$INFO"
 
-TARGET_FILE="$ROOT/releng/target/com.murattahtaci.abaparchitect.target.local.target"
+TARGET_FILE="$ROOT/releng/target/io.github.murattahtaciii.abaparchitect.target.local.target"
 cat > "$TARGET_FILE" <<EOF
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <?pde version="3.8"?>

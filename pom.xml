@@ -5,8 +5,8 @@
 
   <modelVersion>4.0.0</modelVersion>
 
-  <groupId>com.murattahtaci.abaparchitect</groupId>
-  <artifactId>com.murattahtaci.abaparchitect.parent</artifactId>
+  <groupId>io.github.murattahtaciii.abaparchitect</groupId>
+  <artifactId>io.github.murattahtaciii.abaparchitect.parent</artifactId>
   <version>1.0.0-SNAPSHOT</version>
   <packaging>pom</packaging>
 
@@ -14,16 +14,16 @@
   <description>JSON/XML verisinden ABAP tip tanımları, iXML, Simple Transformation ve şablon kodu üreten Eclipse eklentisi.</description>
 
   <modules>
-    <module>plugins/com.murattahtaci.abaparchitect</module>
-    <module>features/com.murattahtaci.abaparchitect.feature</module>
-    <module>releng/com.murattahtaci.abaparchitect.site</module>
+    <module>plugins/io.github.murattahtaciii.abaparchitect</module>
+    <module>features/io.github.murattahtaciii.abaparchitect.feature</module>
+    <module>releng/io.github.murattahtaciii.abaparchitect.site</module>
   </modules>
 
   <properties>
     <tycho.version>5.0.4</tycho.version>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <eclipse.release>2026-03</eclipse.release>
-    <target.file>${maven.multiModuleProjectDirectory}/releng/target/com.murattahtaci.abaparchitect.target.target</target.file>
+    <target.file>${maven.multiModuleProjectDirectory}/releng/target/io.github.murattahtaciii.abaparchitect.target.target</target.file>
   </properties>
 
   <build>
@@ -52,7 +52,7 @@
     <profile>
       <id>local-target</id>
       <properties>
-        <target.file>${maven.multiModuleProjectDirectory}/releng/target/com.murattahtaci.abaparchitect.target.local.target</target.file>
+        <target.file>${maven.multiModuleProjectDirectory}/releng/target/io.github.murattahtaciii.abaparchitect.target.local.target</target.file>
       </properties>
     </profile>
   </profiles>

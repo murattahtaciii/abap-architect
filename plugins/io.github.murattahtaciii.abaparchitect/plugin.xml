@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?eclipse version="3.4"?>
+<plugin>
+
+   <extension
+         point="org.eclipse.ui.views">
+      <category
+            id="io.github.murattahtaciii.abaparchitect.category"
+            name="ABAP Architect">
+      </category>
+      <view
+            id="io.github.murattahtaciii.abaparchitect.view"
+            name="ABAP Architect"
+            category="io.github.murattahtaciii.abaparchitect.category"
+            class="io.github.murattahtaciii.abaparchitect.ui.AbapArchitectView"
+            restorable="true">
+         <description>JSON/XML verisinden ABAP tip ve kod uretir.</description>
+      </view>
+   </extension>
+
+</plugin>

@@ -55,7 +55,7 @@ Eclipse eklentisi.
 
 Local installation from a build:
 
-1. Build (see below) and take `releng/com.murattahtaci.abaparchitect.site/target/repository`.
+1. Build (see below) and take `releng/io.github.murattahtaciii.abaparchitect.site/target/repository`.
 2. `Help > Install New Software... > Add... > Local...` and select that folder.
 
 ### Build
@@ -74,7 +74,7 @@ releng/sync-local-target.sh
 ./mvnw -Plocal-target clean verify
 ```
 
-Output: `releng/com.murattahtaci.abaparchitect.site/target/repository/` (p2 update site).
+Output: `releng/io.github.murattahtaciii.abaparchitect.site/target/repository/` (p2 update site).
 
 Publish the update site to GitHub Pages (gh-pages branch):
 
@@ -176,7 +176,7 @@ Eclipse Public License 2.0 (EPL-2.0). See [LICENSE](LICENSE).
 
 Build çıktısından yerel kurulum:
 
-1. Build alın (aşağıya bakın) → `releng/com.murattahtaci.abaparchitect.site/target/repository`
+1. Build alın (aşağıya bakın) → `releng/io.github.murattahtaciii.abaparchitect.site/target/repository`
 2. `Help > Install New Software... > Add... > Local...` ile o klasörü seçin.
 
 ### Derleme
@@ -195,7 +195,7 @@ releng/sync-local-target.sh
 ./mvnw -Plocal-target clean verify
 ```
 
-Çıktı: `releng/com.murattahtaci.abaparchitect.site/target/repository/` (p2 update site).
+Çıktı: `releng/io.github.murattahtaciii.abaparchitect.site/target/repository/` (p2 update site).
 
 Update site'i GitHub Pages'e (gh-pages dalı) yayınlama:
 
